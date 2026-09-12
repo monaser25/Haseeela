@@ -71,8 +71,8 @@ export interface StatCardProps extends Omit<CardProps, 'title'> {
   label: string;
   value: React.ReactNode;
   delta?: number;
-  tone?: 'positive' | 'negative' | 'neutral';
-  sub?: string;
+  tone?: 'positive' | 'negative' | 'neutral' | 'warning';
+  sub?: React.ReactNode;
   sparkline?: React.ReactNode;
   icon?: string;
 }
@@ -90,7 +90,7 @@ export function StatCard({
   hover,
   ...props 
 }: StatCardProps) {
-  const valColor = tone === "positive" ? "text-positive" : tone === "negative" ? "text-negative" : "text-text";
+  const valColor = tone === "positive" ? "text-positive" : tone === "negative" ? "text-negative" : tone === "warning" ? "text-warning" : "text-text";
   
   return (
     <Card 

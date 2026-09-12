@@ -4,7 +4,7 @@ import dynamic from 'next/dynamic';
 import { useFinancialStore } from '@/store/financialStore';
 import { Client, Subscription, Transaction } from '@/types/finance';
 import { computeNextBillingDate } from '@/store/financialStore';
-import { getOverviewStats } from '@/selectors/financialSelectors';
+import { getOverviewStats, selectOverduePendingCount } from '@/selectors/financialSelectors';
 import { makeCompactCurrencyFormatter, makeLongCurrencyFormatter } from '@/lib/currency';
 import { formatDate } from '@/lib/format';
 import { useLocale, translateError } from '@/lib/i18n';
@@ -77,6 +77,7 @@ export default function DashboardPage() {
   const [isSaving, setIsSaving] = useState(false);
   
   const overview = useMemo(() => getOverviewStats(transactions, clients, subscriptions), [transactions, clients, subscriptions]);
+  const overduePendingCount = useMemo(() => selectOverduePendingCount(transactions), [transactions]);
   
   const money0 = useMemo(() => makeCompactCurrencyFormatter(currency, { maximumFractionDigits: 0 }, locale), [currency, locale]);
   const money2 = useMemo(() => makeCompactCurrencyFormatter(currency, { minimumFractionDigits: 2 }, locale), [currency, locale]);
@@ -290,7 +291,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Stat Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
         <StatCard 
           label={t('dashboard.stats.totalClients')} 
           value={overview.totalClients} 
@@ -303,6 +304,23 @@ export default function DashboardPage() {
           tone="positive"
           icon="TrendingUp"
           onClick={() => router.push('/transactions?filter=revenue')}
+        />
+        <StatCard
+          label={t('pending.kpi.title')}
+          value={<span dir="ltr">{moneyLong0.format(overview.pendingTotal)}</span>}
+          tone="warning"
+          icon="Clock"
+          onClick={() => router.push('/clients#pending')}
+          sub={
+            overduePendingCount > 0 ? (
+              <span className="flex items-center gap-1 flex-wrap">
+                <span>{overview.pendingCount === 1 ? t('pending.kpi.sub', { count: String(overview.pendingCount) }) : t('pending.kpi.subPlural', { count: String(overview.pendingCount) })}</span>
+                <span className="text-negative font-medium">({overduePendingCount === 1 ? t('pending.kpi.overdue', { count: String(overduePendingCount) }) : t('pending.kpi.overduePlural', { count: String(overduePendingCount) })})</span>
+              </span>
+            ) : (
+              overview.pendingCount === 1 ? t('pending.kpi.sub', { count: String(overview.pendingCount) }) : t('pending.kpi.subPlural', { count: String(overview.pendingCount) })
+            )
+          }
         />
         <StatCard
           label={t('dashboard.stats.totalExpenses')}

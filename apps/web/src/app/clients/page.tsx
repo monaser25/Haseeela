@@ -11,6 +11,7 @@ import { formatDate, formatTransactionName } from '@/lib/format';
 import { useLocale } from '@/lib/i18n';
 import { latinTokenClass } from '@/lib/textDirection';
 import { Avatar, Badge, Button, Card, EmptyState, Field, Icon, IconButton, InlineAlert, Input, SectionHeader, Select, StatCard } from '@/components/ui';
+import { PendingPaymentsSection } from '@/components/PendingPayments';
 
 type ModalState = { mode: 'add' } | { mode: 'edit'; client: Client } | null;
 type DeleteTarget = { client: Client; transactionCount: number; revenueTotal: number } | null;
@@ -199,6 +200,8 @@ export default function ClientsPage() {
         </div>
 
         <div className="grid grid-cols-1 xl:grid-cols-[1fr_360px] gap-6">
+        <div className="space-y-6">
+        <PendingPaymentsSection />
         <Card pad={0} className="overflow-hidden">
           <div className="p-4 sm:p-5 border-b border-border flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center">
             <div>
@@ -239,7 +242,7 @@ export default function ClientsPage() {
                   </div>
                   <div className="flex items-center justify-between gap-3 sm:justify-end">
                     <div className="text-left sm:text-right">
-                      <div className="text-sm font-mono font-semibold text-positive">{money.format(totalPaid)}</div>
+                      <div className="text-sm font-mono font-semibold text-positive" dir="ltr">{money.format(totalPaid)}</div>
                       <div className="text-xs text-text-muted">{t('clients.payment.totalPaid')}</div>
                     </div>
                     <div className="flex items-center gap-2">
@@ -262,12 +265,34 @@ export default function ClientsPage() {
                       <div className="text-xs text-text-muted mt-2">{t('clients.history.empty')}</div>
                     ) : (
                       <div className="mt-2 space-y-1">
-                        {clientTransactions.slice(0, 3).map((tx) => (
-                          <div key={tx.id} className="flex items-center justify-between gap-3 text-xs">
-                            <span className={`truncate text-text ${latinTokenClass(tx.name || tx.notes)}`}>{formatTransactionName(tx.name || tx.notes || t('clients.history.paymentFallback'), t as any)}</span>
-                            <span className="shrink-0 text-text-muted"><span className="date-token">{formatDate(tx.date, locale)}</span> - {money.format(tx.amount)}</span>
-                          </div>
-                        ))}
+                        {clientTransactions.slice(0, 3).map((tx) => {
+                          const originatedAsPending = !!(tx.expectedDate && tx.status === 'COMPLETED');
+                          const datesDiffer = originatedAsPending && tx.expectedDate?.slice(0, 10) !== tx.date.slice(0, 10);
+                          return (
+                            <div key={tx.id} className="flex items-center justify-between gap-3 text-xs">
+                              <div className="flex items-center gap-2 truncate min-w-0">
+                                <span className={`truncate text-text ${latinTokenClass(tx.name || tx.notes)}`}>
+                                  {formatTransactionName(tx.name || tx.notes || t('clients.history.paymentFallback'), t as any)}
+                                </span>
+                                {originatedAsPending && (
+                                  <Badge tone="positive" className="text-[10px] h-[18px] px-1.5 shrink-0">
+                                    {t('pending.status.completed')}
+                                  </Badge>
+                                )}
+                              </div>
+                              <div className="shrink-0 flex items-center gap-1.5 text-text-muted">
+                                {datesDiffer && (
+                                  <span className="text-[11px] text-text-muted">
+                                    ({t('pending.history.expectedDate', { date: <span className="date-token">{formatDate(tx.expectedDate!, locale)}</span> })})
+                                  </span>
+                                )}
+                                <span className="date-token">{formatDate(tx.date, locale)}</span>
+                                <span>-</span>
+                                <span dir="ltr">{money.format(tx.amount)}</span>
+                              </div>
+                            </div>
+                          );
+                        })}
                       </div>
                     )}
                   </div>
@@ -276,6 +301,7 @@ export default function ClientsPage() {
             </div>
           )}
         </Card>
+        </div>
 
         <div className="space-y-6">
           <Card className="h-[300px] overflow-hidden" pad={20}>
