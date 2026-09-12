@@ -54,6 +54,7 @@ module.exports = {
           tint: "var(--pending-tint)",
           border: "color-mix(in srgb, var(--pending) 22%, transparent)",
         },
+        "pending-text": "var(--pending-text)",
         info: {
           DEFAULT: "var(--info)",
           tint: "var(--info-tint)",

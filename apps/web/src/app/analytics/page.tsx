@@ -755,7 +755,7 @@ export default function AnalyticsPage() {
           <span className="t-caption text-text-muted group-hover:text-text transition-colors">
             {t('analytics.stats.pending')}
           </span>
-          <div className="t-h2 tnum text-pending" dir="ltr">
+          <div className="t-h2 tnum text-pending-text" dir="ltr">
             {money.format(animatedPending)}
           </div>
           <div className="text-xs text-text-muted">

@@ -33,6 +33,7 @@
     --warning-text:  #B45309;   /* amber-700   — 5.02:1 on #FFFFFF */
     --pending:       #F59E0B;
     --pending-tint:  #FFFBEB;
+    --pending-text:  var(--warning-text);
     --info:          #0EA5E9;
     --info-tint:     #F0F9FF;
 
@@ -166,6 +167,7 @@
     --warning-text:  var(--warning);
     --pending:       #FBBF24;
     --pending-tint:  #2A2010;
+    --pending-text:  var(--pending);
     --info:          #38BDF8;
     --info-tint:     #082F49;
 

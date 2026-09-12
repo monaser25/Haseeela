@@ -260,7 +260,7 @@ export default function DashboardPage() {
         <div className="flex flex-col gap-2 items-start">
         <p>{translateError(error, t)}</p>
         <button 
-              className="text-sm font-semibold underline text-warning-strong hover:text-warning-text"
+              className="text-sm font-semibold underline text-warning-text hover:opacity-80"
               onClick={() => {
                 if ('serviceWorker' in navigator) {
                   navigator.serviceWorker.getRegistrations().then(function(registrations) {
