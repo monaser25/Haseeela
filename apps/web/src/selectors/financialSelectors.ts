@@ -102,6 +102,16 @@ const toDateKey = (val: Date | string) => {
   return date.toISOString().slice(0, 10);
 };
 
+export const daysUntilDate = (targetDate?: Date | string | null, today: Date | string = new Date()): number | null => {
+  if (!targetDate) return null;
+  const targetKey = toDateKey(targetDate);
+  const todayKey = toDateKey(today);
+  const targetMs = Date.parse(`${targetKey}T00:00:00.000Z`);
+  const todayMs = Date.parse(`${todayKey}T00:00:00.000Z`);
+  if (Number.isNaN(targetMs) || Number.isNaN(todayMs)) return null;
+  return Math.floor((targetMs - todayMs) / (1000 * 60 * 60 * 24));
+};
+
 export const daysOverdue = (transaction: Transaction, today: Date | string = new Date()) => {
   const rawDate = transaction.expectedDate || transaction.date;
   if (!rawDate) return 0;

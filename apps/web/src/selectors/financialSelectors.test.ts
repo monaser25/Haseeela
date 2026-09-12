@@ -8,6 +8,7 @@ import {
   selectPendingCount,
   selectOverduePendingCount,
   daysOverdue,
+  daysUntilDate,
   getOverviewStats,
 } from './financialSelectors';
 import { Transaction } from '@/types/finance';
@@ -80,6 +81,20 @@ describe('financial selectors', () => {
 
     const transactions = [pastTx, todayTx, futureTx];
     expect(selectOverduePendingCount(transactions, today)).toBe(1);
+  });
+
+  it('calculates UTC calendar days until a target date with daysUntilDate', () => {
+    const today = new Date('2026-06-15T12:00:00.000Z');
+
+    expect(daysUntilDate('2026-06-10T12:00:00.000Z', today)).toBe(-5);
+    expect(daysUntilDate('2026-06-15T00:00:00.000Z', today)).toBe(0);
+    expect(daysUntilDate('2026-06-16', today)).toBe(1);
+    expect(daysUntilDate('2026-06-18', today)).toBe(3);
+    expect(daysUntilDate('2026-06-25', today)).toBe(10);
+    expect(daysUntilDate('2026-06-29', today)).toBe(14);
+    expect(daysUntilDate('2026-06-30', today)).toBe(15);
+    expect(daysUntilDate(null, today)).toBeNull();
+    expect(daysUntilDate(undefined, today)).toBeNull();
   });
 
   it('includes a pending row in total revenue after it flips to COMPLETED', () => {

@@ -5,6 +5,7 @@ import {
   Bar,
   BarChart,
   CartesianGrid,
+  Cell,
   Legend,
   ResponsiveContainer,
   Tooltip,
@@ -19,6 +20,7 @@ export interface IncomeExpenseRow {
   label: string;
   revenue: number;
   expenses: number;
+  isCurrent?: boolean;
 }
 
 export interface IncomeExpenseBarChartProps {
@@ -41,7 +43,68 @@ export function IncomeExpenseBarChart({
     [data],
   );
 
-  const ariaLabel = t('analytics.chart.aria', { period: periodLabel });
+  const currentBucketIndex = useMemo(() => {
+    // 1. Explicit per-row flag takes highest priority
+    const explicitIndex = data.findIndex((d) => d.isCurrent);
+    if (explicitIndex !== -1) return explicitIndex;
+
+    // 2. Derive current bucket containing today's date based on period
+    const now = new Date();
+
+    const isMonth =
+      periodLabel === t('analytics.periodLabel.month') ||
+      periodLabel === 'This month' ||
+      periodLabel === 'هذا الشهر';
+
+    if (isMonth) {
+      // Month view -> the week containing today (days 1-7 = week 0, etc.)
+      const weekIndex = Math.floor((now.getDate() - 1) / 7);
+      if (weekIndex >= 0 && weekIndex < data.length) {
+        return weekIndex;
+      }
+      return -1;
+    }
+
+    const isQuarter =
+      periodLabel === t('analytics.periodLabel.quarter') ||
+      periodLabel === 'This quarter' ||
+      periodLabel === 'هذا الربع';
+
+    if (isQuarter) {
+      // Quarter view -> the month containing today (0, 1, 2)
+      const quarterMonthIndex = now.getMonth() % 3;
+      if (quarterMonthIndex >= 0 && quarterMonthIndex < data.length) {
+        return quarterMonthIndex;
+      }
+      return -1;
+    }
+
+    const isYear =
+      periodLabel === t('analytics.periodLabel.year') ||
+      periodLabel === 'This year' ||
+      periodLabel === 'هذه السنة';
+
+    if (isYear) {
+      // Year view -> the month containing today (0 to 11)
+      const monthIndex = now.getMonth();
+      if (monthIndex >= 0 && monthIndex < data.length) {
+        return monthIndex;
+      }
+      return -1;
+    }
+
+    // Fallback: If the selected period does not include today
+    // (a past month, a custom historical range), highlight nothing.
+    return -1;
+  }, [data, periodLabel, t]);
+
+  const hasHighlight = currentBucketIndex >= 0;
+  const currentBucket = hasHighlight ? data[currentBucketIndex] : null;
+
+  const baseAriaLabel = t('analytics.chart.aria', { period: periodLabel });
+  const ariaLabel = currentBucket
+    ? `${baseAriaLabel} (${t('analytics.chart.currentHint', { bucket: currentBucket.label })})`
+    : baseAriaLabel;
 
   const margin =
     dir === 'rtl'
@@ -59,6 +122,7 @@ export function IncomeExpenseBarChart({
         <div
           role="img"
           aria-label={ariaLabel}
+          title={ariaLabel}
           className="h-[280px] w-full mt-2"
           dir="ltr"
         >
@@ -155,7 +219,15 @@ export function IncomeExpenseBarChart({
                 isAnimationActive={!reducedMotion}
                 animationDuration={600}
                 animationEasing="ease-out"
-              />
+              >
+                {data.map((_, index) => (
+                  <Cell
+                    key={`rev-cell-${index}`}
+                    fill="var(--positive)"
+                    fillOpacity={hasHighlight ? (index === currentBucketIndex ? 1 : 0.35) : 1}
+                  />
+                ))}
+              </Bar>
               <Bar
                 dataKey="expenses"
                 fill="var(--negative)"
@@ -164,7 +236,15 @@ export function IncomeExpenseBarChart({
                 isAnimationActive={!reducedMotion}
                 animationDuration={600}
                 animationEasing="ease-out"
-              />
+              >
+                {data.map((_, index) => (
+                  <Cell
+                    key={`exp-cell-${index}`}
+                    fill="var(--negative)"
+                    fillOpacity={hasHighlight ? (index === currentBucketIndex ? 1 : 0.35) : 1}
+                  />
+                ))}
+              </Bar>
             </BarChart>
           </ResponsiveContainer>
         </div>

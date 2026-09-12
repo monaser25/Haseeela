@@ -7,6 +7,7 @@ import { Subscription } from '@/types/finance';
 import { makeCompactCurrencyFormatter } from '@/lib/currency';
 import { formatDate } from '@/lib/format';
 import { useLocale } from '@/lib/i18n';
+import { daysUntilDate } from '@/selectors/financialSelectors';
 import { latinTokenClass } from '@/lib/textDirection';
 import { Badge, Button, Card, EmptyState, Field, Icon, IconButton, InlineAlert, Input, SectionHeader, Select, StatCard } from '@/components/ui';
 
@@ -26,6 +27,38 @@ const monthlyEquivalent = (subscription: Subscription) => {
   if (cycle === 'QUARTERLY') return subscription.amount / 3;
   return subscription.amount;
 };
+
+function getSubscriptionUrgencyBadge(
+  sub: Subscription,
+  t: (key: any, vars?: any) => any,
+) {
+  if (sub.status !== 'ACTIVE' || sub.archivedAt || !sub.nextBillingDate) {
+    return null;
+  }
+
+  const diff = daysUntilDate(sub.nextBillingDate);
+  if (diff === null || diff > 14) {
+    return null;
+  }
+
+  if (diff < 0) {
+    return <Badge tone="negative">{t('subscriptions.badge.overdue')}</Badge>;
+  }
+
+  if (diff === 0) {
+    return <Badge tone="warning">{t('subscriptions.badge.dueToday')}</Badge>;
+  }
+
+  const daysElement = <span dir="ltr">{diff}</span>;
+  const label =
+    diff === 1
+      ? t('subscriptions.badge.dueIn', { days: daysElement })
+      : t('subscriptions.badge.dueInPlural', { days: daysElement });
+
+  const tone = diff <= 3 ? 'warning' : 'neutral';
+
+  return <Badge tone={tone}>{label}</Badge>;
+}
 
 export default function SubscriptionsPage() {
   const { subscriptions, transactions, currency, isInitialized, addSubscription, updateSubscription, deleteSubscription, recordSubscriptionPayment } = useFinancialStore();
@@ -199,9 +232,12 @@ export default function SubscriptionsPage() {
                         <Badge tone="accent">{t(`subscriptions.cycle.${(sub.billingCycle || sub.cycle).toLowerCase()}` as any)}</Badge>
                         {sub.archivedAt && <Badge>{t('subscriptions.badges.archived')}</Badge>}
                       </div>
-                      <div className="text-sm text-text-muted mt-1">
-                        {t('subscriptions.list.next', { date: <span className="date-token">{formatDate(sub.nextBillingDate, locale)}</span> })}
-                        {sub.notes ? ` - ${sub.notes}` : ''}
+                      <div className="text-sm text-text-muted mt-1 flex flex-wrap items-center gap-2">
+                        <span>
+                          {t('subscriptions.list.next', { date: <span className="date-token">{formatDate(sub.nextBillingDate, locale)}</span> })}
+                        </span>
+                        {getSubscriptionUrgencyBadge(sub, t)}
+                        {sub.notes ? <span> - {sub.notes}</span> : null}
                       </div>
                     </div>
                   </div>
