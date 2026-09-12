@@ -96,3 +96,28 @@ export const TransactionSchema = z.object({
   isAuto: z.boolean().optional(),
   isEdited: z.boolean().optional(),
 });
+
+const optionalNote = z.preprocess(
+  (value) => (value === '' || value === null ? undefined : value),
+  z.string().max(500, 'Note cannot exceed 500 characters').optional(),
+);
+
+export const pendingPaymentCreateSchema = z.object({
+  clientId: z.string().trim().min(1, 'Client ID is required'),
+  amount: z.coerce.number().positive('Amount must be positive'),
+  expectedDate: dateString,
+  note: optionalNote,
+});
+
+export const pendingPaymentUpdateSchema = z.object({
+  amount: z.coerce.number().positive('Amount must be positive').optional(),
+  expectedDate: optionalDateString,
+  note: optionalNote,
+}).refine(
+  (data) => data.amount !== undefined || data.expectedDate !== undefined || data.note !== undefined,
+  { message: 'At least one field must be provided' },
+);
+
+export const pendingPaymentCompleteSchema = z.object({
+  completedDate: optionalDateString,
+});

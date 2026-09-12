@@ -271,6 +271,40 @@ export const deleteTransactionAPI = async (id: string) => {
   }, 'delete transaction');
 };
 
+export const createPendingPaymentAPI = async (data: { clientId: string; amount: number; expectedDate: string; note?: string }) => {
+  return apiRequest<Transaction>('/api/transactions/pending', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  }, 'create pending payment');
+};
+
+export const updatePendingPaymentAPI = async (id: string, updates: { amount?: number; expectedDate?: string; note?: string }) => {
+  return apiRequest<Transaction>(`/api/transactions/pending/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(updates),
+  }, 'update pending payment');
+};
+
+export const deletePendingPaymentAPI = async (id: string) => {
+  return apiRequest<{ success: boolean }>(`/api/transactions/pending/${id}`, {
+    method: 'DELETE',
+  }, 'delete pending payment');
+};
+
+export const completePendingPaymentAPI = async (id: string, data: { completedDate?: string } = {}) => {
+  return apiRequest<Transaction>(`/api/transactions/pending/${id}/complete`, {
+    method: 'POST',
+    body: JSON.stringify(data),
+  }, 'complete pending payment');
+};
+
+export const revertPendingPaymentAPI = async (id: string) => {
+  return apiRequest<Transaction>(`/api/transactions/pending/${id}/revert`, {
+    method: 'POST',
+    body: JSON.stringify({}),
+  }, 'revert pending payment');
+};
+
 export type InvoiceInput = {
   number?: string;
   clientId?: string | null;

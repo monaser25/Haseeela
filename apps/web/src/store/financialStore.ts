@@ -17,6 +17,11 @@ import {
   createTransactionAPI,
   updateTransactionAPI,
   deleteTransactionAPI,
+  createPendingPaymentAPI,
+  updatePendingPaymentAPI,
+  deletePendingPaymentAPI,
+  completePendingPaymentAPI,
+  revertPendingPaymentAPI,
   loadFinancialSnapshot
 } from '@/services/financialApi';
 import { reconcileFinancialSnapshot, removeClientTransactions } from '@/services/financialSync';
@@ -74,6 +79,11 @@ interface FinancialStore {
   addTransaction: (transaction: Transaction) => Promise<void>;
   updateTransaction: (id: string, updates: Partial<Transaction>) => Promise<void>;
   deleteTransaction: (id: string) => Promise<void>;
+  addPendingPayment: (data: { clientId: string; amount: number; expectedDate: string; note?: string }) => Promise<void>;
+  updatePendingPayment: (id: string, updates: { amount?: number; expectedDate?: string; note?: string }) => Promise<void>;
+  deletePendingPayment: (id: string) => Promise<void>;
+  completePendingPayment: (id: string, completedDate?: string) => Promise<void>;
+  revertPendingPayment: (id: string) => Promise<void>;
   setTransactions: (transactions: Transaction[]) => void;
 }
 
@@ -418,6 +428,61 @@ export const useFinancialStore = create<FinancialStore>((set) => ({
       await refreshAfterLocalMutation();
     } catch (e: any) {
       set({ error: e?.message || 'Failed to delete transaction' });
+      throw e;
+    }
+  },
+  addPendingPayment: async (data) => {
+    try {
+      const created = await createPendingPaymentAPI(data);
+      set((state) => ({ transactions: [created, ...state.transactions.filter((item) => item.id !== created.id)], error: null }));
+      persistLocalSnapshot();
+      await refreshAfterLocalMutation();
+    } catch (e: any) {
+      set({ error: e?.message || 'Failed to create pending payment' });
+      throw e;
+    }
+  },
+  updatePendingPayment: async (id, updates) => {
+    try {
+      const updated = await updatePendingPaymentAPI(id, updates);
+      set((state) => ({ transactions: state.transactions.map((tx) => (tx.id === id ? updated : tx)), error: null }));
+      persistLocalSnapshot();
+      await refreshAfterLocalMutation();
+    } catch (e: any) {
+      set({ error: e?.message || 'Failed to update pending payment' });
+      throw e;
+    }
+  },
+  deletePendingPayment: async (id) => {
+    try {
+      await deletePendingPaymentAPI(id);
+      set((state) => ({ transactions: state.transactions.filter((tx) => tx.id !== id), error: null }));
+      persistLocalSnapshot();
+      await refreshAfterLocalMutation();
+    } catch (e: any) {
+      set({ error: e?.message || 'Failed to delete pending payment' });
+      throw e;
+    }
+  },
+  completePendingPayment: async (id, completedDate) => {
+    try {
+      const updated = await completePendingPaymentAPI(id, { completedDate });
+      set((state) => ({ transactions: state.transactions.map((tx) => (tx.id === id ? updated : tx)), error: null }));
+      persistLocalSnapshot();
+      await refreshAfterLocalMutation();
+    } catch (e: any) {
+      set({ error: e?.message || 'Failed to complete pending payment' });
+      throw e;
+    }
+  },
+  revertPendingPayment: async (id) => {
+    try {
+      const updated = await revertPendingPaymentAPI(id);
+      set((state) => ({ transactions: state.transactions.map((tx) => (tx.id === id ? updated : tx)), error: null }));
+      persistLocalSnapshot();
+      await refreshAfterLocalMutation();
+    } catch (e: any) {
+      set({ error: e?.message || 'Failed to revert pending payment' });
       throw e;
     }
   },
