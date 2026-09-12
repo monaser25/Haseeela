@@ -150,14 +150,26 @@ export default function SubscriptionsPage() {
           <Button icon="Plus" onClick={() => { setModalError(null); setModal({ mode: 'add' }); }} className="w-full sm:w-auto">{t('subscriptions.addSubscription')}</Button>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatCard label={t('subscriptions.stats.active')} value={subscriptionStats.active} icon="CreditCard" />
-          <StatCard label={t('subscriptions.stats.monthlyCost')} value={money.format(subscriptionStats.monthlyCost)} tone="negative" icon="Receipt" />
-          <StatCard label={t('subscriptions.stats.yearlyRunRate')} value={money.format(subscriptionStats.yearlyRunRate)} tone="negative" icon="TrendingDown" />
-          <StatCard label={t('subscriptions.stats.archived')} value={subscriptionStats.archived} icon="Archive" />
+        <div className="border-y border-border py-3 grid grid-cols-2 sm:grid-cols-4 divide-x divide-border">
+          <div className="px-3 sm:px-4">
+            <span className="t-caption text-text-muted">{t('subscriptions.stats.active')}</span>
+            <div className="t-h3 tnum text-text mt-0.5" dir="ltr">{subscriptionStats.active}</div>
+          </div>
+          <div className="px-3 sm:px-4">
+            <span className="t-caption text-text-muted">{t('subscriptions.stats.monthlyCost')}</span>
+            <div className="t-h3 tnum text-negative mt-0.5" dir="ltr">{money.format(subscriptionStats.monthlyCost)}</div>
+          </div>
+          <div className="px-3 sm:px-4">
+            <span className="t-caption text-text-muted">{t('subscriptions.stats.yearlyRunRate')}</span>
+            <div className="t-h3 tnum text-negative mt-0.5" dir="ltr">{money.format(subscriptionStats.yearlyRunRate)}</div>
+          </div>
+          <div className="px-3 sm:px-4">
+            <span className="t-caption text-text-muted">{t('subscriptions.stats.archived')}</span>
+            <div className="t-h3 tnum text-text-muted mt-0.5" dir="ltr">{subscriptionStats.archived}</div>
+          </div>
         </div>
 
-        <Card pad={0} className="overflow-hidden">
+        <Card tier="raised" pad={0} className="overflow-hidden">
           <div className="p-4 sm:p-5 border-b border-border flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center">
             <SectionHeader
               title={t('subscriptions.stack.title')}

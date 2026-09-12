@@ -292,11 +292,14 @@ export default function DashboardPage() {
 
       {/* Stat Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
-        <StatCard 
-          label={t('dashboard.stats.totalClients')} 
-          value={overview.totalClients} 
-          icon="Users" 
-          onClick={() => router.push('/clients')} 
+        <StatCard
+          tier="raised"
+          className="col-span-1 sm:col-span-2"
+          label={t('dashboard.stats.netProfit')}
+          value={<span className="text-[28px] sm:text-[32px]">{moneyLong0.format(overview.netProfit)}</span>}
+          tone={overview.netProfit >= 0 ? 'positive' : 'negative'}
+          icon="Wallet"
+          onClick={() => router.push('/analytics')}
         />
         <StatCard
           label={t('dashboard.stats.totalRevenue')}
@@ -329,11 +332,11 @@ export default function DashboardPage() {
           icon="Receipt"
           onClick={() => router.push('/transactions?filter=expenses')}
         />
-        <StatCard
-          label={t('dashboard.stats.netProfit')}
-          value={moneyLong0.format(overview.netProfit)}
-          icon="Wallet"
-          onClick={() => router.push('/analytics')}
+        <StatCard 
+          label={t('dashboard.stats.totalClients')} 
+          value={overview.totalClients} 
+          icon="Users" 
+          onClick={() => router.push('/clients')} 
         />
         <StatCard 
           label={t('dashboard.stats.activeSubscriptions')} 

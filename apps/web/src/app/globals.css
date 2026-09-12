@@ -28,6 +28,8 @@
     --negative-tint: #FEF2F2;
     --warning:       #F59E0B;
     --warning-tint:  #FFFBEB;
+    --pending:       #F59E0B;
+    --pending-tint:  #FFFBEB;
     --info:          #0EA5E9;
     --info-tint:     #F0F9FF;
 
@@ -156,6 +158,8 @@
     --negative-tint: #2A1414;
     --warning:       #FBBF24;
     --warning-tint:  #2A2010;
+    --pending:       #FBBF24;
+    --pending-tint:  #2A2010;
     --info:          #38BDF8;
     --info-tint:     #082F49;
 
@@ -269,3 +273,12 @@
 @keyframes fl-spin { to{ transform:rotate(360deg) } }
 @keyframes fl-scale-in { from{opacity:0; transform:scale(.96)} to{opacity:1; transform:scale(1)} }
 @keyframes fl-pop { 0%{transform:scale(.8); opacity:0} 60%{transform:scale(1.05)} 100%{transform:scale(1); opacity:1} }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

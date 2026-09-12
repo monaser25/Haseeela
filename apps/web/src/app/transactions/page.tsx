@@ -227,11 +227,23 @@ export default function TransactionsPage() {
           <Button icon="Plus" onClick={openAddModal} className="w-full sm:w-auto">{t('transactions.add')}</Button>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatCard label={t('transactions.stats.revenue')} value={<span dir="ltr">{money0.format(ledgerStats.revenue)}</span>} tone="positive" icon="TrendingUp" />
-          <StatCard label={t('transactions.stats.expenses')} value={<span dir="ltr">{money0.format(ledgerStats.expenses)}</span>} tone="negative" icon="Receipt" />
-          <StatCard label={t('transactions.stats.manual')} value={<span dir="ltr">{ledgerStats.manual}</span>} icon="Pencil" />
-          <StatCard label={t('transactions.stats.generated')} value={<span dir="ltr">{ledgerStats.generated}</span>} icon="RefreshCw" />
+        <div className="border-y border-border py-3 grid grid-cols-2 sm:grid-cols-4 divide-x divide-border">
+          <div className="px-3 sm:px-4">
+            <span className="t-caption text-text-muted">{t('transactions.stats.revenue')}</span>
+            <div className="t-h3 tnum text-positive mt-0.5" dir="ltr">{money0.format(ledgerStats.revenue)}</div>
+          </div>
+          <div className="px-3 sm:px-4">
+            <span className="t-caption text-text-muted">{t('transactions.stats.expenses')}</span>
+            <div className="t-h3 tnum text-negative mt-0.5" dir="ltr">{money0.format(ledgerStats.expenses)}</div>
+          </div>
+          <div className="px-3 sm:px-4">
+            <span className="t-caption text-text-muted">{t('transactions.stats.manual')}</span>
+            <div className="t-h3 tnum text-text mt-0.5" dir="ltr">{ledgerStats.manual}</div>
+          </div>
+          <div className="px-3 sm:px-4">
+            <span className="t-caption text-text-muted">{t('transactions.stats.generated')}</span>
+            <div className="t-h3 tnum text-text mt-0.5" dir="ltr">{ledgerStats.generated}</div>
+          </div>
         </div>
 
         <div className="flex flex-wrap gap-2">
@@ -242,7 +254,7 @@ export default function TransactionsPage() {
           ))}
         </div>
 
-        <Card pad={0}>
+        <Card tier="raised" pad={0}>
           <div className="p-4 border-b border-border flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             <SectionHeader
               title={t('transactions.ledger.title')}

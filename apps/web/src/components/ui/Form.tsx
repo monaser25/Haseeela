@@ -195,14 +195,36 @@ export interface SegmentedProps extends Omit<React.HTMLAttributes<HTMLDivElement
 }
 
 export function Segmented({ className, options, value, onChange, size = 'md', ...props }: SegmentedProps) {
-  const hClass = size === 'sm' ? "h-[26px]" : "h-[30px]";
-  
+  const hClass = size === 'sm' ? "min-h-[32px] h-[32px]" : "min-h-[36px] h-[36px]";
+  const optionValues = options.map((o) => (typeof o === "string" ? o : o.value));
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLButtonElement>, currentIndex: number) => {
+    let nextIndex = -1;
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+      e.preventDefault();
+      nextIndex = (currentIndex + 1) % optionValues.length;
+    } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      nextIndex = (currentIndex - 1 + optionValues.length) % optionValues.length;
+    } else if (e.key === 'Home') {
+      e.preventDefault();
+      nextIndex = 0;
+    } else if (e.key === 'End') {
+      e.preventDefault();
+      nextIndex = optionValues.length - 1;
+    }
+    if (nextIndex !== -1) {
+      onChange(optionValues[nextIndex]);
+    }
+  };
+
   return (
     <div 
-      className={cn("inline-flex p-[3px] gap-0.5 bg-surface-hover rounded-md border border-border", className)} 
+      role="tablist"
+      className={cn("inline-flex p-[3px] gap-0.5 bg-surface-hover rounded-md border border-border items-center", className)} 
       {...props}
     >
-      {options.map((o) => {
+      {options.map((o, idx) => {
         const val = typeof o === "string" ? o : o.value;
         const lab = typeof o === "string" ? o : o.label;
         const active = val === value;
@@ -210,9 +232,13 @@ export function Segmented({ className, options, value, onChange, size = 'md', ..
           <button 
             key={val} 
             type="button"
+            role="tab"
+            aria-selected={active}
+            tabIndex={active ? 0 : -1}
             onClick={() => onChange(val)} 
+            onKeyDown={(e) => handleKeyDown(e, idx)}
             className={cn(
-              "focus-ring px-3.5 rounded-[calc(var(--r-md)-3px)] border-none cursor-pointer text-[13px] font-medium transition-all duration-fast",
+              "focus-ring px-3.5 rounded-[calc(var(--r-md)-3px)] border-none cursor-pointer text-[13px] font-medium transition-all duration-fast inline-flex items-center justify-center",
               hClass,
               active 
                 ? "bg-accent text-accent-fg shadow-sm"

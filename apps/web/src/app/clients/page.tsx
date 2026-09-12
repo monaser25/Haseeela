@@ -192,17 +192,29 @@ export default function ClientsPage() {
           <Button icon="Plus" onClick={openAddModal} className="w-full sm:w-auto">{t('clients.addClient')}</Button>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatCard label={t('clients.stats.active')} value={clientStats.active} icon="Users" />
-          <StatCard label={t('clients.stats.retainers')} value={clientStats.retainers} icon="Repeat" />
-          <StatCard label={t('clients.stats.recordedRevenue')} value={money.format(clientStats.recordedRevenue)} tone="positive" icon="TrendingUp" />
-          <StatCard label={t('clients.stats.archived')} value={clientStats.archived} icon="Archive" />
+        <div className="border-y border-border py-3 grid grid-cols-2 sm:grid-cols-4 divide-x divide-border">
+          <div className="px-3 sm:px-4">
+            <span className="t-caption text-text-muted">{t('clients.stats.active')}</span>
+            <div className="t-h3 tnum text-text mt-0.5" dir="ltr">{clientStats.active}</div>
+          </div>
+          <div className="px-3 sm:px-4">
+            <span className="t-caption text-text-muted">{t('clients.stats.retainers')}</span>
+            <div className="t-h3 tnum text-text mt-0.5" dir="ltr">{clientStats.retainers}</div>
+          </div>
+          <div className="px-3 sm:px-4">
+            <span className="t-caption text-text-muted">{t('clients.stats.recordedRevenue')}</span>
+            <div className="t-h3 tnum text-positive mt-0.5" dir="ltr">{money.format(clientStats.recordedRevenue)}</div>
+          </div>
+          <div className="px-3 sm:px-4">
+            <span className="t-caption text-text-muted">{t('clients.stats.archived')}</span>
+            <div className="t-h3 tnum text-text-muted mt-0.5" dir="ltr">{clientStats.archived}</div>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 xl:grid-cols-[1fr_360px] gap-6">
         <div className="space-y-6">
         <PendingPaymentsSection />
-        <Card pad={0} className="overflow-hidden">
+        <Card tier="raised" pad={0} className="overflow-hidden">
           <div className="p-4 sm:p-5 border-b border-border flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center">
             <div>
               <SectionHeader title={t('clients.book.title')} sub={visibleClients.length === 1 ? t('clients.book.shown', { count: String(visibleClients.length) }) : t('clients.book.shownPlural', { count: String(visibleClients.length) })} className="mb-0" />
