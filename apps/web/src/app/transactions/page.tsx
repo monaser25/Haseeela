@@ -230,11 +230,11 @@ export default function TransactionsPage() {
         <div className="border-y border-border py-3 grid grid-cols-2 sm:grid-cols-4 divide-x divide-border">
           <div className="px-3 sm:px-4">
             <span className="t-caption text-text-muted">{t('transactions.stats.revenue')}</span>
-            <div className="t-h3 tnum text-positive mt-0.5" dir="ltr">{money0.format(ledgerStats.revenue)}</div>
+            <div className="t-h3 tnum text-positive-text mt-0.5" dir="ltr">{money0.format(ledgerStats.revenue)}</div>
           </div>
           <div className="px-3 sm:px-4">
             <span className="t-caption text-text-muted">{t('transactions.stats.expenses')}</span>
-            <div className="t-h3 tnum text-negative mt-0.5" dir="ltr">{money0.format(ledgerStats.expenses)}</div>
+            <div className="t-h3 tnum text-negative-text mt-0.5" dir="ltr">{money0.format(ledgerStats.expenses)}</div>
           </div>
           <div className="px-3 sm:px-4">
             <span className="t-caption text-text-muted">{t('transactions.stats.manual')}</span>
@@ -356,7 +356,7 @@ export default function TransactionsPage() {
         <ModalFrame onClose={closeDeleteModal} zIndex="z-[220]">
           <div className="flex flex-col gap-4">
             <div className="flex items-start gap-3">
-              <div className="w-10 h-10 rounded-full bg-negative-tint text-negative flex items-center justify-center shrink-0">
+              <div className="w-10 h-10 rounded-full bg-negative-tint text-negative-text flex items-center justify-center shrink-0">
                 <Icon name="AlertTriangle" size={20} />
               </div>
               <div>
@@ -428,13 +428,13 @@ function TransactionRow({ transaction, money, locale, onEdit, onDelete, t }: { t
           {transaction.isEdited && <Badge tone="warning" icon="Pencil">{t('transactions.badges.edited')}</Badge>}
         </div>
       </td>
-      <td className={`px-5 py-4 text-end font-mono text-sm font-medium whitespace-nowrap ${transaction.type === 'INCOME' ? 'text-positive' : 'text-negative'}`}>
+      <td className={`px-5 py-4 text-end font-mono text-sm font-medium whitespace-nowrap ${transaction.type === 'INCOME' ? 'text-positive-text' : 'text-negative-text'}`}>
         <span dir="ltr">{transaction.type === 'INCOME' ? '+' : '-'}{money.format(transaction.amount)}</span>
       </td>
       <td className="px-5 py-4">
         <div className="flex justify-end rtl:justify-start gap-1">
           <IconButton icon="Pencil" size="sm" title={`${t('transactions.actions.edit')} ${transactionTitle(transaction, t)}`} onClick={() => onEdit(transaction)} />
-          <IconButton icon="Trash2" size="sm" title={`${t('transactions.actions.delete')} ${transactionTitle(transaction, t)}`} className="text-negative hover:text-negative" onClick={() => onDelete(transaction)} />
+          <IconButton icon="Trash2" size="sm" title={`${t('transactions.actions.delete')} ${transactionTitle(transaction, t)}`} className="text-negative-text hover:text-negative-text" onClick={() => onDelete(transaction)} />
         </div>
       </td>
     </tr>
@@ -452,7 +452,7 @@ function TransactionCard({ transaction, money, locale, onEdit, onDelete, t }: { 
             <div className="text-xs text-text-muted mt-0.5"><span className="date-token">{formatTransactionDate(transaction.date, locale)}</span> - {sourceLabel(transaction, t)}</div>
           </div>
         </div>
-        <div className={`font-mono text-sm font-medium shrink-0 ${transaction.type === 'INCOME' ? 'text-positive' : 'text-negative'}`}>
+        <div className={`font-mono text-sm font-medium shrink-0 ${transaction.type === 'INCOME' ? 'text-positive-text' : 'text-negative-text'}`}>
           <span dir="ltr">{transaction.type === 'INCOME' ? '+' : '-'}{money.format(transaction.amount)}</span>
         </div>
       </div>
@@ -466,7 +466,7 @@ function TransactionCard({ transaction, money, locale, onEdit, onDelete, t }: { 
         </div>
         <div className="flex gap-1 shrink-0">
           <IconButton icon="Pencil" size="sm" title={`${t('transactions.actions.edit')} ${transactionTitle(transaction, t)}`} onClick={() => onEdit(transaction)} />
-          <IconButton icon="Trash2" size="sm" title={`${t('transactions.actions.delete')} ${transactionTitle(transaction, t)}`} className="text-negative hover:text-negative" onClick={() => onDelete(transaction)} />
+          <IconButton icon="Trash2" size="sm" title={`${t('transactions.actions.delete')} ${transactionTitle(transaction, t)}`} className="text-negative-text hover:text-negative-text" onClick={() => onDelete(transaction)} />
         </div>
       </div>
     </div>
@@ -475,7 +475,7 @@ function TransactionCard({ transaction, money, locale, onEdit, onDelete, t }: { 
 
 function TransactionIcon({ type }: { type: Transaction['type'] }) {
   return (
-    <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${type === 'INCOME' ? 'bg-positive-tint text-positive' : 'bg-negative-tint text-negative'}`}>
+    <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${type === 'INCOME' ? 'bg-positive-tint text-positive-text' : 'bg-negative-tint text-negative-text'}`}>
       <Icon name={type === 'INCOME' ? 'ArrowDown' : 'ArrowUp'} size={16} strokeWidth={2.2} />
     </div>
   );

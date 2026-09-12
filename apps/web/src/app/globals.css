@@ -24,10 +24,13 @@
     /* ---- Semantic (finance) ---- */
     --positive:      #10B981;
     --positive-tint: #ECFDF5;
+    --positive-text: #047857;   /* emerald-700 — 5.48:1 on #FFFFFF */
     --negative:      #EF4444;
     --negative-tint: #FEF2F2;
+    --negative-text: #DC2626;   /* red-600     — 4.83:1 on #FFFFFF */
     --warning:       #F59E0B;
     --warning-tint:  #FFFBEB;
+    --warning-text:  #B45309;   /* amber-700   — 5.02:1 on #FFFFFF */
     --pending:       #F59E0B;
     --pending-tint:  #FFFBEB;
     --info:          #0EA5E9;
@@ -154,10 +157,13 @@
 
     --positive:      #34D399;
     --positive-tint: #0E2A22;
+    --positive-text: var(--positive);
     --negative:      #F87171;
     --negative-tint: #2A1414;
+    --negative-text: var(--negative);
     --warning:       #FBBF24;
     --warning-tint:  #2A2010;
+    --warning-text:  var(--warning);
     --pending:       #FBBF24;
     --pending-tint:  #2A2010;
     --info:          #38BDF8;

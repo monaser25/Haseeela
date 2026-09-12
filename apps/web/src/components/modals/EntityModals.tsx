@@ -215,7 +215,7 @@ function TransactionForm({
 
   return (
     <form onSubmit={(e) => { e.preventDefault(); onSave(new FormData(e.currentTarget)); }} className="flex flex-col gap-4">
-      {error && <p className="t-small text-negative">{error}</p>}
+      {error && <p className="t-small text-negative-text">{error}</p>}
       <Field label={t('dashboard.forms.tx.nameLabel')}>
         <Input name="name" placeholder={type === 'INCOME' ? t('dashboard.forms.tx.nameIncomePlaceholder') : t('dashboard.forms.tx.nameExpensePlaceholder')} required autoFocus />
       </Field>
@@ -255,7 +255,7 @@ function ClientForm({
   const [paymentType, setPaymentType] = useState<Client['paymentType']>('onetime');
   return (
     <form onSubmit={(e) => { e.preventDefault(); onSave(new FormData(e.currentTarget), paymentType); }} className="flex flex-col gap-4">
-      {error && <p className="t-small text-negative">{error}</p>}
+      {error && <p className="t-small text-negative-text">{error}</p>}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <Field label={t('dashboard.forms.client.nameLabel')}><Input name="name" required autoFocus /></Field>
         <Field label={t('dashboard.forms.client.amountLabel')}><Input name="revenue" type="number" min="0" step="0.01" required prefix={<span dir="ltr">{prefix}</span>} /></Field>
@@ -308,7 +308,7 @@ function SubscriptionForm({
 }) {
   return (
     <form onSubmit={(e) => { e.preventDefault(); onSave(new FormData(e.currentTarget)); }} className="flex flex-col gap-4">
-      {error && <p className="t-small text-negative">{error}</p>}
+      {error && <p className="t-small text-negative-text">{error}</p>}
       <Field label={t('dashboard.forms.sub.nameLabel')}><Input name="name" placeholder={t('dashboard.forms.sub.namePlaceholder')} required autoFocus /></Field>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <Field label={t('dashboard.forms.sub.costLabel')}><Input name="amount" type="number" min="0" step="0.01" required prefix={<span dir="ltr">{prefix}</span>} /></Field>

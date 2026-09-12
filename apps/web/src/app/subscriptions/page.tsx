@@ -189,11 +189,11 @@ export default function SubscriptionsPage() {
           </div>
           <div className="px-3 sm:px-4">
             <span className="t-caption text-text-muted">{t('subscriptions.stats.monthlyCost')}</span>
-            <div className="t-h3 tnum text-negative mt-0.5" dir="ltr">{money.format(subscriptionStats.monthlyCost)}</div>
+            <div className="t-h3 tnum text-negative-text mt-0.5" dir="ltr">{money.format(subscriptionStats.monthlyCost)}</div>
           </div>
           <div className="px-3 sm:px-4">
             <span className="t-caption text-text-muted">{t('subscriptions.stats.yearlyRunRate')}</span>
-            <div className="t-h3 tnum text-negative mt-0.5" dir="ltr">{money.format(subscriptionStats.yearlyRunRate)}</div>
+            <div className="t-h3 tnum text-negative-text mt-0.5" dir="ltr">{money.format(subscriptionStats.yearlyRunRate)}</div>
           </div>
           <div className="px-3 sm:px-4">
             <span className="t-caption text-text-muted">{t('subscriptions.stats.archived')}</span>
@@ -222,7 +222,7 @@ export default function SubscriptionsPage() {
               {visibleSubscriptions.map((sub) => (
                 <div key={sub.id} className="p-4 flex flex-col gap-4 hover:bg-surface-hover transition-colors sm:flex-row sm:items-center sm:justify-between">
                   <div className="flex items-start gap-3 sm:items-center">
-                    <div className="w-10 h-10 rounded-lg bg-negative-tint text-negative flex items-center justify-center shrink-0">
+                    <div className="w-10 h-10 rounded-lg bg-negative-tint text-negative-text flex items-center justify-center shrink-0">
                       <Icon name="CreditCard" size={18} />
                     </div>
                     <div className="min-w-0">
@@ -243,12 +243,12 @@ export default function SubscriptionsPage() {
                   </div>
                   <div className="flex items-center justify-between gap-3 sm:justify-end">
                     <div className="text-left sm:text-right">
-                      <div className="text-sm font-mono font-semibold text-negative" dir="ltr">{t('subscriptions.list.perMonth', { amount: money.format(monthlyEquivalent(sub)) })}</div>
+                      <div className="text-sm font-mono font-semibold text-negative-text" dir="ltr">{t('subscriptions.list.perMonth', { amount: money.format(monthlyEquivalent(sub)) })}</div>
                       <div className="text-xs text-text-muted">{t('subscriptions.list.billed', { amount: <span dir="ltr">{money.format(sub.amount)}</span> })}</div>
                     </div>
                     <div className="flex items-center gap-2">
                       {sub.status === 'ACTIVE' && !sub.archivedAt && (
-                        <IconButton icon="DollarSign" size="sm" disabled={recordingId === sub.id} onClick={() => recordPayment(sub)} title={t('subscriptions.actions.recordPayment', { name: sub.name })} className="text-positive hover:text-positive" />
+                        <IconButton icon="DollarSign" size="sm" disabled={recordingId === sub.id} onClick={() => recordPayment(sub)} title={t('subscriptions.actions.recordPayment', { name: sub.name })} className="text-positive-text hover:text-positive-text" />
                       )}
                       <IconButton icon="Pencil" size="sm" onClick={() => { setModalError(null); setModal({ mode: 'edit', subscription: sub }); }} title={t('subscriptions.actions.edit', { name: sub.name })} />
                       <Button type="button" variant="secondary" size="sm" icon="Archive" onClick={() => requestDelete(sub)}>
@@ -264,7 +264,7 @@ export default function SubscriptionsPage() {
 
         <Card pad={20} className="max-w-md">
           <div className="t-caption text-text-muted">{t('subscriptions.cost.title')}</div>
-          <div className="t-display text-negative mt-1">{money.format(totalMonthlyCost)}</div>
+          <div className="t-display text-negative-text mt-1">{money.format(totalMonthlyCost)}</div>
           <p className="text-sm text-text-muted mt-1">{t('subscriptions.cost.desc')}</p>
         </Card>
       </div>

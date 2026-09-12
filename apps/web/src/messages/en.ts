@@ -649,7 +649,7 @@ export const en = {
   'analytics.table.category': 'Category',
   'analytics.table.amount': 'Amount',
   'analytics.table.percentage': 'Share',
-  'analytics.chart.weekLabel': 'Wk {number}',
+  'analytics.chart.weekLabel': '{number}',
   'charts.days.0': 'Sun',
   'charts.days.1': 'Mon',
   'charts.days.2': 'Tue',

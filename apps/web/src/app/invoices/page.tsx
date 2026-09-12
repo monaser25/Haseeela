@@ -171,7 +171,7 @@ export default function InvoicesPage() {
                       <td className="px-4 py-3 t-body-m" dir="ltr">{inv.number}</td>
                       <td className="px-4 py-3 text-text-secondary" dir="ltr">{inv.client?.name || '—'}</td>
                       <td className="px-4 py-3 text-text-secondary tnum"><span className="date-token">{fmtDate(inv.issueDate, locale)}</span></td>
-                      <td className={`px-4 py-3 tnum ${inv.status === 'OVERDUE' ? 'text-negative' : 'text-text-secondary'}`}><span className="date-token">{fmtDate(inv.dueDate, locale)}</span></td>
+                      <td className={`px-4 py-3 tnum ${inv.status === 'OVERDUE' ? 'text-negative-text' : 'text-text-secondary'}`}><span className="date-token">{fmtDate(inv.dueDate, locale)}</span></td>
                       <td className="px-4 py-3"><Badge tone={statusTone(inv.status)}>{statusLabel}</Badge></td>
                       <td className="px-4 py-3 text-right t-body-m tnum" dir="ltr">{money.format(inv.total)}</td>
                       <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>

@@ -64,7 +64,7 @@ export default function ForgotPasswordPage() {
   if (sentTo) {
     return (
       <AuthLayout>
-        <div className="w-[56px] h-[56px] rounded-full bg-positive-tint text-positive flex items-center justify-center mb-5">
+        <div className="w-[56px] h-[56px] rounded-full bg-positive-tint text-positive-text flex items-center justify-center mb-5">
           <Icon name="mailCheck" size={26} />
         </div>
         <AuthHeader title={t('auth.forgotPassword.successTitle')} sub={t('auth.forgotPassword.successSubtitle')} />

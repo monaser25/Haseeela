@@ -232,7 +232,7 @@ export default function ReportsPage() {
                 return (
                   <div key={s.label}>
                     <div className="t-caption text-text-muted">{s.label}</div>
-                    <div className={`t-h3 tnum ${s.tone === 'positive' ? 'text-positive' : s.tone === 'negative' ? 'text-negative' : ''}`}>
+                    <div className={`t-h3 tnum ${s.tone === 'positive' ? 'text-positive-text' : s.tone === 'negative' ? 'text-negative-text' : ''}`}>
                       {isNumericInt ? s.value : money.format(s.value)}
                     </div>
                   </div>
@@ -266,7 +266,7 @@ export default function ReportsPage() {
                         const isNeg = col.numeric && typeof cell === 'number' && cell < 0;
                         const isPos = col.numeric && typeof cell === 'number' && cell > 0 && (col.key === 'revenue' || col.key === 'amount' || col.key === 'net');
                         return (
-                          <td key={j} className={`px-5 py-2.5 t-body ${col.numeric ? (dir === 'rtl' ? 'text-left tnum' : 'text-right tnum') : ''} ${isNeg ? 'text-negative' : isPos ? 'text-positive' : ''}`}>
+                          <td key={j} className={`px-5 py-2.5 t-body ${col.numeric ? (dir === 'rtl' ? 'text-left tnum' : 'text-right tnum') : ''} ${isNeg ? 'text-negative-text' : isPos ? 'text-positive-text' : ''}`}>
                             {fmtCell(cell, col.numeric)}
                           </td>
                         );

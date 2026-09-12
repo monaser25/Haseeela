@@ -246,7 +246,7 @@ function Step({ title, sub, children }: { title: string; sub: string; children: 
 function Summary({ ok, label, detail }: { ok: boolean; label: string; detail: string }) {
   return (
     <div className="flex items-center gap-3 p-3 rounded-md border border-border bg-surface">
-      <span className={`w-6 h-6 rounded-full flex items-center justify-center ${ok ? 'bg-positive-tint text-positive' : 'bg-surface-hover text-text-muted'}`}>
+      <span className={`w-6 h-6 rounded-full flex items-center justify-center ${ok ? 'bg-positive-tint text-positive-text' : 'bg-surface-hover text-text-muted'}`}>
         <Icon name={ok ? 'check' : 'minus'} size={14} />
       </span>
       <span className="t-body-m flex-1">{label}</span>

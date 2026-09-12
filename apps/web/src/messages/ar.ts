@@ -651,7 +651,7 @@ export const ar: Messages = {
   'analytics.table.category': 'الفئة',
   'analytics.table.amount': 'المبلغ',
   'analytics.table.percentage': 'النسبة',
-  'analytics.chart.weekLabel': 'أس {number}',
+  'analytics.chart.weekLabel': '{number}',
   'charts.days.0': 'الأحد',
   'charts.days.1': 'الإثنين',
   'charts.days.2': 'الثلاثاء',

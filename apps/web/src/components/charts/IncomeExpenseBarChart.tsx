@@ -168,7 +168,7 @@ export function IncomeExpenseBarChart({
                           <span className="w-2 h-2 rounded-full bg-positive inline-block" />
                           {t('analytics.stats.revenue')}
                         </span>
-                        <span className="font-mono tnum text-positive" dir="ltr">
+                        <span className="font-mono tnum text-positive-text" dir="ltr">
                           {formatAmount(rev)}
                         </span>
                       </div>
@@ -177,14 +177,14 @@ export function IncomeExpenseBarChart({
                           <span className="w-2 h-2 rounded-full bg-negative inline-block" />
                           {t('analytics.stats.expenses')}
                         </span>
-                        <span className="font-mono tnum text-negative" dir="ltr">
+                        <span className="font-mono tnum text-negative-text" dir="ltr">
                           {formatAmount(exp)}
                         </span>
                       </div>
                       <div className="pt-1 mt-1 border-t border-border flex items-center justify-between gap-3">
                         <span className="text-text-muted">{t('analytics.table.net')}</span>
                         <span
-                          className={`font-mono tnum ${net >= 0 ? 'text-positive' : 'text-negative'}`}
+                          className={`font-mono tnum ${net >= 0 ? 'text-positive-text' : 'text-negative-text'}`}
                           dir="ltr"
                         >
                           {formatAmount(net)}
@@ -281,14 +281,14 @@ export function IncomeExpenseBarChart({
                 return (
                   <tr key={row.label} className="hover:bg-surface-hover/50">
                     <td className="py-1.5 text-start text-text-secondary">{row.label}</td>
-                    <td className="py-1.5 text-end font-mono tnum text-positive" dir="ltr">
+                    <td className="py-1.5 text-end font-mono tnum text-positive-text" dir="ltr">
                       {formatAmount(row.revenue)}
                     </td>
-                    <td className="py-1.5 text-end font-mono tnum text-negative" dir="ltr">
+                    <td className="py-1.5 text-end font-mono tnum text-negative-text" dir="ltr">
                       {formatAmount(row.expenses)}
                     </td>
                     <td
-                      className={`py-1.5 text-end font-mono tnum ${net >= 0 ? 'text-positive' : 'text-negative'}`}
+                      className={`py-1.5 text-end font-mono tnum ${net >= 0 ? 'text-positive-text' : 'text-negative-text'}`}
                       dir="ltr"
                     >
                       {formatAmount(net)}

@@ -117,7 +117,7 @@ export default function RegisterPage() {
   if (notice && !error) {
     return (
       <AuthLayout>
-        <div className="w-[56px] h-[56px] rounded-full bg-positive-tint text-positive flex items-center justify-center mb-5">
+        <div className="w-[56px] h-[56px] rounded-full bg-positive-tint text-positive-text flex items-center justify-center mb-5">
           <Icon name="mail" size={26} />
         </div>
         <AuthHeader 

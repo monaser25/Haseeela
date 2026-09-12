@@ -97,7 +97,7 @@ export function StatCard({
   hover,
   ...props 
 }: StatCardProps) {
-  const valColor = tone === "positive" ? "text-positive" : tone === "negative" ? "text-negative" : tone === "warning" ? "text-warning" : "text-text";
+  const valColor = tone === "positive" ? "text-positive-text" : tone === "negative" ? "text-negative-text" : tone === "warning" ? "text-warning-text" : "text-text";
   
   return (
     <Card 

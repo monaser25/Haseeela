@@ -21,7 +21,7 @@ export const Field = React.forwardRef<HTMLLabelElement, FieldProps>(
         {label && <span className="t-body-m text-text-secondary">{label}</span>}
         {children}
         {error ? (
-          <span className="t-small text-negative">{error}</span>
+          <span className="t-small text-negative-text">{error}</span>
         ) : hint ? (
           <span className="t-small text-text-muted">{hint}</span>
         ) : null}
@@ -280,11 +280,11 @@ export function StrengthMeter({ className, value, ...props }: StrengthMeterProps
   ];
   
   const textColors = [
-    "text-negative", 
-    "text-negative", 
-    "text-warning",  
+    "text-negative-text", 
+    "text-negative-text", 
+    "text-warning-text",  
     "text-info",     
-    "text-positive"  
+    "text-positive-text"  
   ];
 
   return (

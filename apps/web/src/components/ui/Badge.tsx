@@ -29,9 +29,9 @@ export function Badge({ className, tone = 'neutral', icon, children, ...props }:
   const tones = {
     neutral:  "bg-surface-hover text-text-secondary",
     accent:   "bg-accent-tint text-accent",
-    positive: "bg-positive-tint text-positive",
-    negative: "bg-negative-tint text-negative",
-    warning:  "bg-warning-tint text-warning",
+    positive: "bg-positive-tint text-positive-text",
+    negative: "bg-negative-tint text-negative-text",
+    warning:  "bg-warning-tint text-warning-text",
     info:     "bg-info-tint text-info",
   };
 
@@ -87,7 +87,7 @@ export function DeltaChip({ value, inverse = false, className, ...props }: Delta
     <span 
       className={cn(
         "inline-flex items-center gap-1 text-xs font-semibold tnum",
-        isGood ? "text-positive" : "text-negative",
+        isGood ? "text-positive-text" : "text-negative-text",
         className
       )}
       {...props}

@@ -13,9 +13,9 @@ import { Segmented } from '@/components/ui/Form';
 import { Icon } from '@/components/ui/Icon';
 
 const typeConfig: Record<string, { icon: string; cls: string }> = {
-  BILLING_DUE: { icon: 'clock', cls: 'bg-warning-tint text-warning' },
-  INVOICE_OVERDUE: { icon: 'alertTriangle', cls: 'bg-negative-tint text-negative' },
-  PAYMENT_RECORDED: { icon: 'checkCircle', cls: 'bg-positive-tint text-positive' },
+  BILLING_DUE: { icon: 'clock', cls: 'bg-warning-tint text-warning-text' },
+  INVOICE_OVERDUE: { icon: 'alertTriangle', cls: 'bg-negative-tint text-negative-text' },
+  PAYMENT_RECORDED: { icon: 'checkCircle', cls: 'bg-positive-tint text-positive-text' },
   WEEKLY_SUMMARY: { icon: 'barChart3', cls: 'bg-info-tint text-info' },
   INFO: { icon: 'info', cls: 'bg-accent-tint text-accent' },
 };

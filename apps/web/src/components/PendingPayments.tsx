@@ -657,7 +657,7 @@ export function PendingPaymentsSection() {
                         <IconButton
                           icon="trash2"
                           size="sm"
-                          className="min-w-[44px] min-h-[44px] text-negative hover:text-negative"
+                          className="min-w-[44px] min-h-[44px] text-negative-text hover:text-negative-text"
                           title={t('pending.actions.delete')}
                           aria-label={t('pending.actions.delete')}
                           onClick={() => setDeleteTarget(tx)}

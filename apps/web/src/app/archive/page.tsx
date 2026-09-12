@@ -49,7 +49,7 @@ function RowActions({ count, onRestore, onDelete }: {
       <Button type="button" variant="secondary" icon="RotateCcw" loading={busy === 'restore'} disabled={busy !== null} onClick={() => run('restore', onRestore)}>
         {t('archive.actions.restore')}
       </Button>
-      <Button type="button" variant="ghost" icon="Trash2" disabled={busy !== null} onClick={() => setConfirming(true)} className="text-negative hover:text-negative">
+      <Button type="button" variant="ghost" icon="Trash2" disabled={busy !== null} onClick={() => setConfirming(true)} className="text-negative-text hover:text-negative-text">
         {t('archive.actions.delete')}
       </Button>
     </div>

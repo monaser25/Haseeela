@@ -11,7 +11,7 @@ export default function OfflinePage() {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center gap-4 px-6 text-center bg-background text-text">
-      <div className="w-16 h-16 rounded-full bg-warning-tint text-warning flex items-center justify-center">
+      <div className="w-16 h-16 rounded-full bg-warning-tint text-warning-text flex items-center justify-center">
         <Icon name="wifiOff" size={28} />
       </div>
       <div className="space-y-1.5">

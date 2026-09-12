@@ -203,7 +203,7 @@ export default function ClientsPage() {
           </div>
           <div className="px-3 sm:px-4">
             <span className="t-caption text-text-muted">{t('clients.stats.recordedRevenue')}</span>
-            <div className="t-h3 tnum text-positive mt-0.5" dir="ltr">{money.format(clientStats.recordedRevenue)}</div>
+            <div className="t-h3 tnum text-positive-text mt-0.5" dir="ltr">{money.format(clientStats.recordedRevenue)}</div>
           </div>
           <div className="px-3 sm:px-4">
             <span className="t-caption text-text-muted">{t('clients.stats.archived')}</span>
@@ -254,12 +254,12 @@ export default function ClientsPage() {
                   </div>
                   <div className="flex items-center justify-between gap-3 sm:justify-end">
                     <div className="text-left sm:text-right">
-                      <div className="text-sm font-mono font-semibold text-positive" dir="ltr">{money.format(totalPaid)}</div>
+                      <div className="text-sm font-mono font-semibold text-positive-text" dir="ltr">{money.format(totalPaid)}</div>
                       <div className="text-xs text-text-muted">{t('clients.payment.totalPaid')}</div>
                     </div>
                     <div className="flex items-center gap-2">
                       {client.paymentType === 'retainer' && client.status === 'ACTIVE' && !client.archivedAt && (
-                        <IconButton icon="DollarSign" size="sm" disabled={recordingId === client.id} onClick={() => recordPayment(client)} title={t('clients.actions.recordPayment', { name: client.name })} className="text-positive hover:text-positive" />
+                        <IconButton icon="DollarSign" size="sm" disabled={recordingId === client.id} onClick={() => recordPayment(client)} title={t('clients.actions.recordPayment', { name: client.name })} className="text-positive-text hover:text-positive-text" />
                       )}
                       <IconButton icon="Pencil" size="sm" onClick={() => openEditModal(client)} title={t('clients.actions.edit', { name: client.name })} />
                       <Button type="button" variant="secondary" size="sm" icon="Archive" onClick={() => requestDelete(client)}>
@@ -329,7 +329,7 @@ export default function ClientsPage() {
             {topClient ? (
               <div className="mt-4">
                 <div className={`t-h3 text-text ${latinTokenClass(topClient.name)}`}>{topClient.name}</div>
-                <div className="t-display text-positive mt-2">{money.format(revenueForClient(topClient.id))}</div>
+                <div className="t-display text-positive-text mt-2">{money.format(revenueForClient(topClient.id))}</div>
                 <p className="text-sm text-text-muted mt-1">{t('clients.top.totalRevenue')}</p>
               </div>
             ) : <p className="text-sm text-text-muted mt-4">{t('clients.top.empty')}</p>}
@@ -357,7 +357,7 @@ export default function ClientsPage() {
               <div className="rounded-md bg-info-tint border border-info-border p-3 text-sm text-info">
                 <span className="font-medium">{t('clients.delete.archiveLabel')}</span> {deleteTarget.transactionCount === 1 ? t('clients.delete.archiveNotice', { count: String(deleteTarget.transactionCount), amount: moneyLong.format(deleteTarget.revenueTotal) }) : t('clients.delete.archiveNoticePlural', { count: String(deleteTarget.transactionCount), amount: moneyLong.format(deleteTarget.revenueTotal) })}
               </div>
-              <div className="rounded-md bg-negative-tint border border-negative-border p-3 text-sm text-negative">
+              <div className="rounded-md bg-negative-tint border border-negative-border p-3 text-sm text-negative-text">
                 <span className="font-medium">{t('clients.delete.deleteLabel')}</span> {deleteTarget.transactionCount === 1 ? t('clients.delete.deleteNotice', { count: String(deleteTarget.transactionCount), amount: moneyLong.format(deleteTarget.revenueTotal) }) : t('clients.delete.deleteNoticePlural', { count: String(deleteTarget.transactionCount), amount: moneyLong.format(deleteTarget.revenueTotal) })}
               </div>
             </div>

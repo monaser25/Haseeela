@@ -682,7 +682,7 @@ export default function AnalyticsPage() {
                     />
                   </div>
                   {customError && (
-                    <div className="text-[11px] text-negative font-medium">{customError}</div>
+                    <div className="text-[11px] text-negative-text font-medium">{customError}</div>
                   )}
                   <div className="flex items-center justify-end gap-2 mt-1">
                     <Button
@@ -724,7 +724,7 @@ export default function AnalyticsPage() {
         {/* Revenue */}
         <div className="p-3 sm:px-4 sm:py-3 border-b border-border sm:border-b-0 flex flex-col gap-1">
           <span className="t-caption text-text-muted">{t('analytics.stats.revenue')}</span>
-          <div className="t-h2 tnum text-positive" dir="ltr">
+          <div className="t-h2 tnum text-positive-text" dir="ltr">
             {money.format(animatedRevenue)}
           </div>
           <div className="flex items-center gap-1 min-h-[18px]">
@@ -736,7 +736,7 @@ export default function AnalyticsPage() {
         <div className="p-3 sm:px-4 sm:py-3 border-b border-inline-start border-border sm:border-b-0 sm:border-inline-start-0 flex flex-col gap-1">
           <span className="t-caption text-text-muted">{t('analytics.stats.netIncome')}</span>
           <div
-            className={`t-h2 tnum ${animatedProfit >= 0 ? 'text-positive' : 'text-negative'}`}
+            className={`t-h2 tnum ${animatedProfit >= 0 ? 'text-positive-text' : 'text-negative-text'}`}
             dir="ltr"
           >
             {money.format(animatedProfit)}
@@ -766,7 +766,7 @@ export default function AnalyticsPage() {
         {/* Expenses */}
         <div className="p-3 sm:px-4 sm:py-3 border-inline-start border-border sm:border-inline-start-0 flex flex-col gap-1">
           <span className="t-caption text-text-muted">{t('analytics.stats.expenses')}</span>
-          <div className="t-h2 tnum text-negative" dir="ltr">
+          <div className="t-h2 tnum text-negative-text" dir="ltr">
             {money.format(animatedExpenses)}
           </div>
           <div className="flex items-center gap-1 min-h-[18px]">
@@ -834,14 +834,14 @@ export default function AnalyticsPage() {
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4" dir={dir}>
           <div>
             <div className="t-caption text-text-muted">{t('analytics.summary.totalRevenue')}</div>
-            <div className="t-h3 tnum mt-1 text-positive" dir="ltr">
+            <div className="t-h3 tnum mt-1 text-positive-text" dir="ltr">
               {money.format(overview.totalRevenue)}
             </div>
           </div>
           <div>
             <div className="t-caption text-text-muted">{t('analytics.summary.netProfit')}</div>
             <div
-              className={`t-h3 tnum mt-1 ${overview.netProfit >= 0 ? 'text-positive' : 'text-negative'}`}
+              className={`t-h3 tnum mt-1 ${overview.netProfit >= 0 ? 'text-positive-text' : 'text-negative-text'}`}
               dir="ltr"
             >
               {money.format(overview.netProfit)}
@@ -857,7 +857,7 @@ export default function AnalyticsPage() {
           </div>
           <div>
             <div className="t-caption text-text-muted">{t('analytics.summary.toolsPerMonth')}</div>
-            <div className="t-h3 tnum mt-1 text-negative" dir="ltr">
+            <div className="t-h3 tnum mt-1 text-negative-text" dir="ltr">
               {money.format(overview.subscriptionBurden)}
             </div>
           </div>

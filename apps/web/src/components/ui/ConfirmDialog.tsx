@@ -41,7 +41,7 @@ export function ConfirmDialog({
       <div className="flex flex-col items-center text-center gap-3 pt-1">
         <div
           className={`w-12 h-12 rounded-full flex items-center justify-center ${
-            tone === 'danger' ? 'bg-negative-tint text-negative' : 'bg-accent-tint text-accent'
+            tone === 'danger' ? 'bg-negative-tint text-negative-text' : 'bg-accent-tint text-accent'
           }`}
         >
           <Icon name={tone === 'danger' ? 'alertTriangle' : 'helpCircle'} size={24} />

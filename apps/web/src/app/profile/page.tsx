@@ -223,7 +223,7 @@ export default function ProfilePage() {
         maxWidth={460}
       >
         <div className="flex flex-col items-center text-center gap-3 pt-1">
-          <div className="w-12 h-12 rounded-full bg-negative-tint text-negative flex items-center justify-center">
+          <div className="w-12 h-12 rounded-full bg-negative-tint text-negative-text flex items-center justify-center">
             <Icon name="alertTriangle" size={24} />
           </div>
           <h2 className="t-h3">{t('profile.modal.deleteTitle')}</h2>

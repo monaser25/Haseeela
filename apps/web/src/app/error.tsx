@@ -11,7 +11,7 @@ export default function Error({ error, reset }: { error: Error & { digest?: stri
 
   return (
     <div className="min-h-[60vh] flex flex-col items-center justify-center text-center gap-4 px-6">
-      <div className="w-16 h-16 rounded-full bg-negative-tint text-negative flex items-center justify-center">
+      <div className="w-16 h-16 rounded-full bg-negative-tint text-negative-text flex items-center justify-center">
         <Icon name="alertTriangle" size={28} />
       </div>
       <div className="space-y-1.5">

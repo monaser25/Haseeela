@@ -30,8 +30,8 @@ interface ToastContextValue {
 const ToastContext = createContext<ToastContextValue | null>(null);
 
 const toneConfig: Record<ToastTone, { icon: string; cls: string }> = {
-  success: { icon: 'checkCircle', cls: 'text-positive' },
-  error: { icon: 'alertCircle', cls: 'text-negative' },
+  success: { icon: 'checkCircle', cls: 'text-positive-text' },
+  error: { icon: 'alertCircle', cls: 'text-negative-text' },
   info: { icon: 'info', cls: 'text-info' },
 };
 

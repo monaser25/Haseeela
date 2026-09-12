@@ -260,7 +260,7 @@ export default function DashboardPage() {
         <div className="flex flex-col gap-2 items-start">
         <p>{translateError(error, t)}</p>
         <button 
-              className="text-sm font-semibold underline text-warning-strong hover:text-warning"
+              className="text-sm font-semibold underline text-warning-strong hover:text-warning-text"
               onClick={() => {
                 if ('serviceWorker' in navigator) {
                   navigator.serviceWorker.getRegistrations().then(function(registrations) {
@@ -316,7 +316,7 @@ export default function DashboardPage() {
             overduePendingCount > 0 ? (
               <span className="flex items-center gap-1 flex-wrap">
                 <span>{overview.pendingCount === 1 ? t('pending.kpi.sub', { count: String(overview.pendingCount) }) : t('pending.kpi.subPlural', { count: String(overview.pendingCount) })}</span>
-                <span className="text-negative font-medium">({overduePendingCount === 1 ? t('pending.kpi.overdue', { count: String(overduePendingCount) }) : t('pending.kpi.overduePlural', { count: String(overduePendingCount) })})</span>
+                <span className="text-negative-text font-medium">({overduePendingCount === 1 ? t('pending.kpi.overdue', { count: String(overduePendingCount) }) : t('pending.kpi.overduePlural', { count: String(overduePendingCount) })})</span>
               </span>
             ) : (
               overview.pendingCount === 1 ? t('pending.kpi.sub', { count: String(overview.pendingCount) }) : t('pending.kpi.subPlural', { count: String(overview.pendingCount) })
@@ -396,7 +396,7 @@ export default function DashboardPage() {
               </div>
               <div className="mt-4 pt-3.5 border-t border-border flex justify-between items-baseline">
                 <span className="text-sm text-text-muted">{t('dashboard.topClient.totalPaid')}</span>
-                <span className="t-h3 font-mono text-positive" dir="ltr">{money0.format(topClient.value)}</span>
+                <span className="t-h3 font-mono text-positive-text" dir="ltr">{money0.format(topClient.value)}</span>
               </div>
             </Card>
           )}
@@ -443,7 +443,7 @@ export default function DashboardPage() {
                   >
                     <td className="px-5 py-3">
                       <div className="flex items-center gap-3">
-                        <div className={`w-8 h-8 rounded-lg shrink-0 flex items-center justify-center ${tx.type === 'INCOME' ? 'bg-positive-tint text-positive' : 'bg-negative-tint text-negative'}`}>
+                        <div className={`w-8 h-8 rounded-lg shrink-0 flex items-center justify-center ${tx.type === 'INCOME' ? 'bg-positive-tint text-positive-text' : 'bg-negative-tint text-negative-text'}`}>
                           <Icon name={tx.type === 'INCOME' ? 'ArrowDown' : 'ArrowUp'} size={15} strokeWidth={2.2} />
                         </div>
                         <div>
@@ -453,7 +453,7 @@ export default function DashboardPage() {
                       </div>
                     </td>
                     <td className="px-5 py-3 text-right">
-                      <span className={`t-body-m font-mono ${tx.type === 'INCOME' ? 'text-positive' : 'text-negative'}`} dir="ltr">
+                      <span className={`t-body-m font-mono ${tx.type === 'INCOME' ? 'text-positive-text' : 'text-negative-text'}`} dir="ltr">
                         {tx.type === 'INCOME' ? '+' : '−'}{money2.format(tx.amount)}
                       </span>
                     </td>
@@ -516,7 +516,7 @@ function DashboardTransactionForm({ type, currencyPrefix, error, isSaving, onCan
       <div>
         <h2 id="dashboard-modal-title" className="t-h3">{type === 'INCOME' ? t('dashboard.forms.income.title') : t('dashboard.forms.expense.title')}</h2>
         <p className="text-sm text-text-muted mt-1">{type === 'INCOME' ? t('dashboard.forms.income.subtitle') : t('dashboard.forms.expense.subtitle')}</p>
-        {error && <p className="text-sm text-negative mt-2">{error}</p>}
+        {error && <p className="text-sm text-negative-text mt-2">{error}</p>}
       </div>
       <Field label={t('dashboard.forms.tx.nameLabel')}>
         <Input name="name" placeholder={type === 'INCOME' ? t('dashboard.forms.tx.nameIncomePlaceholder') : t('dashboard.forms.tx.nameExpensePlaceholder')} required autoFocus />
@@ -567,7 +567,7 @@ function DashboardClientForm({ currencyPrefix, error, isSaving, onCancel, onSave
       <div>
         <h2 id="dashboard-modal-title" className="t-h3">{t('dashboard.forms.client.title')}</h2>
         <p className="text-sm text-text-muted mt-1">{t('dashboard.forms.client.subtitle')}</p>
-        {error && <p className="text-sm text-negative mt-2">{error}</p>}
+        {error && <p className="text-sm text-negative-text mt-2">{error}</p>}
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <Field label={t('dashboard.forms.client.nameLabel')}>
@@ -623,7 +623,7 @@ function DashboardSubscriptionForm({ currencyPrefix, error, isSaving, onCancel, 
       <div>
         <h2 id="dashboard-modal-title" className="t-h3">{t('dashboard.forms.sub.title')}</h2>
         <p className="text-sm text-text-muted mt-1">{t('dashboard.forms.sub.subtitle')}</p>
-        {error && <p className="text-sm text-negative mt-2">{error}</p>}
+        {error && <p className="text-sm text-negative-text mt-2">{error}</p>}
       </div>
       <Field label={t('dashboard.forms.sub.nameLabel')}>
         <Input name="name" placeholder={t('dashboard.forms.sub.namePlaceholder')} required autoFocus />
