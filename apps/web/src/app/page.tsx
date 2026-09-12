@@ -5,7 +5,7 @@ import { useFinancialStore } from '@/store/financialStore';
 import { Client, Subscription, Transaction } from '@/types/finance';
 import { computeNextBillingDate } from '@/store/financialStore';
 import { getOverviewStats, selectOverduePendingCount } from '@/selectors/financialSelectors';
-import { makeCompactCurrencyFormatter, makeLongCurrencyFormatter } from '@/lib/currency';
+import { makeCompactCurrencyFormatter } from '@/lib/currency';
 import { formatDate } from '@/lib/format';
 import { useLocale, translateError } from '@/lib/i18n';
 import { formatTransactionName } from '@/lib/format';
@@ -81,8 +81,6 @@ export default function DashboardPage() {
   
   const money0 = useMemo(() => makeCompactCurrencyFormatter(currency, { maximumFractionDigits: 0 }, locale), [currency, locale]);
   const money2 = useMemo(() => makeCompactCurrencyFormatter(currency, { minimumFractionDigits: 2 }, locale), [currency, locale]);
-  // Spacious overview cards use the full localized currency name (e.g. "دولار أمريكي").
-  const moneyLong0 = useMemo(() => makeLongCurrencyFormatter(currency, { maximumFractionDigits: 0 }, locale), [currency, locale]);
   const currencyPrefix = useMemo(() => money2.formatToParts(0).find((part) => part.type === 'currency')?.value || currency, [currency, money2]);
 
   useEffect(() => {
@@ -296,21 +294,21 @@ export default function DashboardPage() {
           tier="raised"
           className="col-span-1 sm:col-span-2"
           label={t('dashboard.stats.netProfit')}
-          value={<span className="text-[28px] sm:text-[32px]">{moneyLong0.format(overview.netProfit)}</span>}
+          value={<span className="text-[28px] sm:text-[32px]">{money0.format(overview.netProfit)}</span>}
           tone={overview.netProfit >= 0 ? 'positive' : 'negative'}
           icon="Wallet"
           onClick={() => router.push('/analytics')}
         />
         <StatCard
           label={t('dashboard.stats.totalRevenue')}
-          value={moneyLong0.format(overview.totalRevenue)}
+          value={money0.format(overview.totalRevenue)}
           tone="positive"
           icon="TrendingUp"
           onClick={() => router.push('/transactions?filter=revenue')}
         />
         <StatCard
           label={t('pending.kpi.title')}
-          value={<span dir="ltr">{moneyLong0.format(overview.pendingTotal)}</span>}
+          value={<span dir="ltr">{money0.format(overview.pendingTotal)}</span>}
           tone="warning"
           icon="Clock"
           onClick={() => router.push('/clients#pending')}
@@ -327,7 +325,7 @@ export default function DashboardPage() {
         />
         <StatCard
           label={t('dashboard.stats.totalExpenses')}
-          value={moneyLong0.format(overview.totalExpenses)}
+          value={money0.format(overview.totalExpenses)}
           tone="negative"
           icon="Receipt"
           onClick={() => router.push('/transactions?filter=expenses')}

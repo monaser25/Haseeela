@@ -329,7 +329,7 @@ export default function ClientsPage() {
             {topClient ? (
               <div className="mt-4">
                 <div className={`t-h3 text-text ${latinTokenClass(topClient.name)}`}>{topClient.name}</div>
-                <div className="t-display text-positive mt-2">{moneyLong.format(revenueForClient(topClient.id))}</div>
+                <div className="t-display text-positive mt-2">{money.format(revenueForClient(topClient.id))}</div>
                 <p className="text-sm text-text-muted mt-1">{t('clients.top.totalRevenue')}</p>
               </div>
             ) : <p className="text-sm text-text-muted mt-4">{t('clients.top.empty')}</p>}

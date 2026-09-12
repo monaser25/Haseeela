@@ -6,7 +6,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useFinancialStore } from '@/store/useFinancialStore';
 import { selectPendingCount, selectPendingTotal } from '@/selectors/financialSelectors';
 import { Transaction } from '@/types/finance';
-import { makeCompactCurrencyFormatter, makeLongCurrencyFormatter } from '@/lib/currency';
+import { makeCompactCurrencyFormatter } from '@/lib/currency';
 import { useLocale } from '@/lib/i18n';
 import { useCountUp } from '@/lib/useReducedMotion';
 import { Card, SectionHeader } from '@/components/ui/Card';
@@ -128,10 +128,6 @@ export default function AnalyticsPage() {
 
   const money = useMemo(
     () => makeCompactCurrencyFormatter(currency, { maximumFractionDigits: 0 }, locale),
-    [currency, locale],
-  );
-  const moneyLong = useMemo(
-    () => makeLongCurrencyFormatter(currency, { maximumFractionDigits: 0 }, locale),
     [currency, locale],
   );
 
@@ -729,7 +725,7 @@ export default function AnalyticsPage() {
         <div className="p-3 sm:px-4 sm:py-3 border-b border-border sm:border-b-0 flex flex-col gap-1">
           <span className="t-caption text-text-muted">{t('analytics.stats.revenue')}</span>
           <div className="t-h2 tnum text-positive" dir="ltr">
-            {moneyLong.format(animatedRevenue)}
+            {money.format(animatedRevenue)}
           </div>
           <div className="flex items-center gap-1 min-h-[18px]">
             {revenueDelta != null && <DeltaChip value={revenueDelta} />}
@@ -743,7 +739,7 @@ export default function AnalyticsPage() {
             className={`t-h2 tnum ${animatedProfit >= 0 ? 'text-positive' : 'text-negative'}`}
             dir="ltr"
           >
-            {moneyLong.format(animatedProfit)}
+            {money.format(animatedProfit)}
           </div>
           <div className="flex items-center gap-1 min-h-[18px]">
             {profitDelta != null && <DeltaChip value={profitDelta} />}
@@ -760,7 +756,7 @@ export default function AnalyticsPage() {
             {t('analytics.stats.pending')}
           </span>
           <div className="t-h2 tnum text-pending" dir="ltr">
-            {moneyLong.format(animatedPending)}
+            {money.format(animatedPending)}
           </div>
           <div className="text-xs text-text-muted">
             {t('analytics.stats.pendingAwaiting', { count: animatedPendingCount })}
@@ -771,7 +767,7 @@ export default function AnalyticsPage() {
         <div className="p-3 sm:px-4 sm:py-3 border-inline-start border-border sm:border-inline-start-0 flex flex-col gap-1">
           <span className="t-caption text-text-muted">{t('analytics.stats.expenses')}</span>
           <div className="t-h2 tnum text-negative" dir="ltr">
-            {moneyLong.format(animatedExpenses)}
+            {money.format(animatedExpenses)}
           </div>
           <div className="flex items-center gap-1 min-h-[18px]">
             {expensesDelta != null && <DeltaChip value={expensesDelta} inverse />}
@@ -789,7 +785,7 @@ export default function AnalyticsPage() {
       </Card>
 
       {/* ── §3.3 & §3.4 Mid row: Income vs Expenses & Top 5 Clients (tier="base") ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-[1.6fr_1fr] gap-6 items-start">
         {/* Income vs Expenses grouped bar chart */}
         <Card tier="base" pad={20}>
           <SectionHeader
@@ -839,7 +835,7 @@ export default function AnalyticsPage() {
           <div>
             <div className="t-caption text-text-muted">{t('analytics.summary.totalRevenue')}</div>
             <div className="t-h3 tnum mt-1 text-positive" dir="ltr">
-              {moneyLong.format(overview.totalRevenue)}
+              {money.format(overview.totalRevenue)}
             </div>
           </div>
           <div>
@@ -848,13 +844,13 @@ export default function AnalyticsPage() {
               className={`t-h3 tnum mt-1 ${overview.netProfit >= 0 ? 'text-positive' : 'text-negative'}`}
               dir="ltr"
             >
-              {moneyLong.format(overview.netProfit)}
+              {money.format(overview.netProfit)}
             </div>
           </div>
           <div>
             <div className="t-caption text-text-muted">{t('analytics.summary.avgClient')}</div>
             <div className="t-h3 tnum mt-1 text-text" dir="ltr">
-              {moneyLong.format(
+              {money.format(
                 overview.totalClients > 0 ? overview.totalRevenue / overview.totalClients : 0,
               )}
             </div>
@@ -862,7 +858,7 @@ export default function AnalyticsPage() {
           <div>
             <div className="t-caption text-text-muted">{t('analytics.summary.toolsPerMonth')}</div>
             <div className="t-h3 tnum mt-1 text-negative" dir="ltr">
-              {moneyLong.format(overview.subscriptionBurden)}
+              {money.format(overview.subscriptionBurden)}
             </div>
           </div>
         </div>

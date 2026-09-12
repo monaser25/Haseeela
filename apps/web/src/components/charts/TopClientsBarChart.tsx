@@ -64,7 +64,7 @@ export function TopClientsBarChart({ clients, formatAmount }: TopClientsBarChart
 
             return (
               <div key={client.id} className="flex items-center gap-3" dir={dir}>
-                <span className="t-body-m font-mono text-text-muted w-4 text-center">
+                <span className="t-body-m font-mono text-text-muted w-4 text-center shrink-0 lg:hidden xl:block">
                   {idx + 1}
                 </span>
                 <Avatar name={client.name} size={30} />
@@ -73,7 +73,7 @@ export function TopClientsBarChart({ clients, formatAmount }: TopClientsBarChart
                     <span className={`t-body-m truncate text-text font-medium ${latinTokenClass(client.name)}`}>
                       {client.name}
                     </span>
-                    <span className="t-body-m font-mono tnum text-text ms-2" dir="ltr">
+                    <span className="t-body-m font-mono tnum text-text ms-2 shrink-0 whitespace-nowrap" dir="ltr">
                       {formatAmount(client.revenue)}
                     </span>
                   </div>
@@ -87,7 +87,7 @@ export function TopClientsBarChart({ clients, formatAmount }: TopClientsBarChart
                     />
                   </div>
                 </div>
-                <span className="text-xs font-mono text-text-muted w-9 text-end" dir="ltr">
+                <span className="text-xs font-mono text-text-muted w-9 text-end shrink-0" dir="ltr">
                   {pct}%
                 </span>
               </div>
@@ -97,16 +97,16 @@ export function TopClientsBarChart({ clients, formatAmount }: TopClientsBarChart
           {/* "+N more" aggregate row if remainder exists */}
           {remainder.length > 0 && (
             <div className="flex items-center gap-3 pt-2 border-t border-border/60" dir={dir}>
-              <span className="t-body-m font-mono text-text-muted w-4 text-center">…</span>
-              <div className="w-[30px] h-[30px] rounded-full bg-surface-hover flex items-center justify-center text-text-muted">
+              <span className="t-body-m font-mono text-text-muted w-4 text-center shrink-0 lg:hidden xl:block">…</span>
+              <div className="w-[30px] h-[30px] rounded-full bg-surface-hover flex items-center justify-center text-text-muted shrink-0">
                 <Icon name="Users" size={14} />
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex justify-between items-baseline mb-1.5">
-                  <span className="t-body-m text-text-secondary">
+                  <span className="t-body-m text-text-secondary truncate">
                     {t('analytics.clients.more', { count: remainder.length })}
                   </span>
-                  <span className="t-body-m font-mono tnum text-text-secondary ms-2" dir="ltr">
+                  <span className="t-body-m font-mono tnum text-text-secondary ms-2 shrink-0 whitespace-nowrap" dir="ltr">
                     {formatAmount(remainderRevenue)}
                   </span>
                 </div>
@@ -117,7 +117,7 @@ export function TopClientsBarChart({ clients, formatAmount }: TopClientsBarChart
                   />
                 </div>
               </div>
-              <span className="text-xs font-mono text-text-muted w-9 text-end" dir="ltr">
+              <span className="text-xs font-mono text-text-muted w-9 text-end shrink-0" dir="ltr">
                 {remainderPct}%
               </span>
             </div>

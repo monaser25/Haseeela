@@ -63,7 +63,7 @@ export function RevenueTrendChart({ data, formatAmount }: RevenueTrendChartProps
   const margin =
     dir === 'rtl'
       ? { top: 12, right: 36, left: 10, bottom: 0 }
-      : { top: 12, right: 10, left: -10, bottom: 0 };
+      : { top: 12, right: 10, left: 0, bottom: 0 };
 
   return (
     <div className="flex flex-col w-full">
@@ -98,6 +98,7 @@ export function RevenueTrendChart({ data, formatAmount }: RevenueTrendChartProps
                 reversed={dir === 'rtl'}
               />
               <YAxis
+                width={76}
                 orientation={dir === 'rtl' ? 'right' : 'left'}
                 tickLine={false}
                 axisLine={false}
