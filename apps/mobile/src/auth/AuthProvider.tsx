@@ -143,6 +143,24 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const value = useMemo<AuthContextValue>(() => {
     const client = getSupabaseClient();
 
+    // Per-method staleness at queue-execution time. Every initiation takes an increasing id
+    // (initiationSeqRef); a queued op may sit behind slower auth work, so it re-checks before
+    // touching the SDK:
+    // - signIn / signUp: stale once any newer initiation (sign-out, another sign-in) exists or the
+    //   provider unmounted. A queued sign-in must never resurrect a session the user just left.
+    // - signOut (primary): never stale. It was queued while signed in and must still sign out;
+    //   FIFO order guarantees any later sign-in runs after it.
+    // - signOut fallback (scope: local): skipped when a newer initiation exists or a DIFFERENT owner
+    //   than the one that initiated the sign-out is now signed in. The same owner re-published by an
+    //   SDK event (e.g. TOKEN_REFRESHED) while the primary sign-out failed still gets the local
+    //   sign-out, since that is exactly what the fallback is for. The post-signUp sign-out is skipped when a newer initiation exists. Neither
+    //   can kill a newer session.
+    const isSuperseded = (id: number) => !isMountedRef.current || initiationSeqRef.current !== id;
+    // The post-signUp sign-out targets the session that signUp itself created, so the scope
+    // legitimately holds that new user id; only a newer initiation makes it stale.
+    const mayRunFollowUpSignOut = (id: number) =>
+      !isSuperseded(id) && activeInitiationRef.current?.id === id;
+
     return {
       session,
       user: session?.user ?? null,
@@ -153,13 +171,16 @@ export function AuthProvider({ children }: AuthProviderProps) {
         activeInitiationRef.current = { id, type: 'signIn', identifier: email.trim() };
         ++authEventSeqRef.current;
 
-        const { error } = await enqueueAuthOp(() =>
-          client.auth.signInWithPassword({
+        const result = await enqueueAuthOp(async () => {
+          if (isSuperseded(id)) return null;
+          return client.auth.signInWithPassword({
             email: email.trim(),
             password,
-          })
-        );
-        if (error) throw error;
+          });
+        });
+        // Superseded before it ran: the user's later action wins, nothing to report
+        if (!result) return;
+        if (result.error) throw result.error;
       },
 
       signUp: async (email: string, password: string, name?: string) => {
@@ -167,16 +188,20 @@ export function AuthProvider({ children }: AuthProviderProps) {
         activeInitiationRef.current = { id, type: 'signUp', identifier: email.trim() };
         const emailRedirectTo = `${env.apiUrl}/verify`;
 
-        const { data, error } = await enqueueAuthOp(() =>
-          client.auth.signUp({
+        const signUpResult = await enqueueAuthOp(async () => {
+          if (isSuperseded(id)) return null;
+          return client.auth.signUp({
             email: email.trim(),
             password,
             options: {
               emailRedirectTo,
               data: name ? { name } : undefined,
             },
-          })
-        );
+          });
+        });
+        // Never report a confirmation email for a sign-up that did not run
+        if (!signUpResult) throw new Error('Sign-up was superseded by a newer auth action');
+        const { data, error } = signUpResult;
 
         if (error) throw error;
 
@@ -185,13 +210,22 @@ export function AuthProvider({ children }: AuthProviderProps) {
         if (data.session) {
           if (activeInitiationRef.current?.id === id && isMountedRef.current) {
             try {
-              const { error: signOutError } = await enqueueAuthOp(() => client.auth.signOut());
-              if (signOutError && activeInitiationRef.current?.id === id && isMountedRef.current) {
-                await enqueueAuthOp(() => client.auth.signOut({ scope: 'local' }));
+              const signOutResult = await enqueueAuthOp(async () => {
+                if (!mayRunFollowUpSignOut(id)) return null;
+                return client.auth.signOut();
+              });
+              if (signOutResult?.error && activeInitiationRef.current?.id === id && isMountedRef.current) {
+                await enqueueAuthOp(async () => {
+                  if (!mayRunFollowUpSignOut(id)) return;
+                  await client.auth.signOut({ scope: 'local' });
+                });
               }
             } catch {
               if (activeInitiationRef.current?.id === id && isMountedRef.current) {
-                await enqueueAuthOp(() => client.auth.signOut({ scope: 'local' })).catch(() => undefined);
+                await enqueueAuthOp(async () => {
+                  if (!mayRunFollowUpSignOut(id)) return;
+                  await client.auth.signOut({ scope: 'local' });
+                }).catch(() => undefined);
               }
             }
             if (activeInitiationRef.current?.id === id && isMountedRef.current) {
@@ -228,7 +262,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
       signOut: async () => {
         const id = ++initiationSeqRef.current;
-        activeInitiationRef.current = { id, type: 'signOut', identifier: currentUserIdRef.current };
+        const initiatingOwner = currentUserIdRef.current;
+        activeInitiationRef.current = { id, type: 'signOut', identifier: initiatingOwner };
+        // Same owner or signed out: run. A different owner means a newer session we must not kill.
+        const mayRunLocalFallback = () => {
+          if (isSuperseded(id)) return false;
+          const scope = getCurrentAuthUserId();
+          return typeof scope !== 'string' || scope === initiatingOwner;
+        };
 
         bumpSessionEpoch();
         setAuthScope(null);
@@ -238,12 +279,20 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
         try {
           const { error } = await enqueueAuthOp(() => client.auth.signOut());
-          if (error && activeInitiationRef.current?.id === id && isMountedRef.current) {
-            await enqueueAuthOp(() => client.auth.signOut({ scope: 'local' }));
+          // An SDK event re-publishing the same user clears activeInitiationRef, so gate on
+          // supersession (checked again inside the queued op) rather than on that ref.
+          if (error && !isSuperseded(id)) {
+            await enqueueAuthOp(async () => {
+              if (!mayRunLocalFallback()) return;
+              await client.auth.signOut({ scope: 'local' });
+            });
           }
         } catch {
-          if (activeInitiationRef.current?.id === id && isMountedRef.current) {
-            await enqueueAuthOp(() => client.auth.signOut({ scope: 'local' })).catch(() => undefined);
+          if (!isSuperseded(id)) {
+            await enqueueAuthOp(async () => {
+              if (!mayRunLocalFallback()) return;
+              await client.auth.signOut({ scope: 'local' });
+            }).catch(() => undefined);
           }
         } finally {
           if (activeInitiationRef.current?.id === id && currentUserIdRef.current === undefined) {

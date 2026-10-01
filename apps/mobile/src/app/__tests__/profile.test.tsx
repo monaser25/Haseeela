@@ -6,9 +6,10 @@ import ProfileScreen, { getInitials } from '../(app)/profile';
 import MoreScreen from '../(app)/(tabs)/more';
 import { ThemeProvider } from '../../theme';
 import { I18nProvider } from '../../i18n';
-import { AuthProvider } from '../../auth/AuthProvider';
+import { AuthProvider, useAuth } from '../../auth/AuthProvider';
+import type { AuthContextValue } from '../../auth/AuthProvider';
 import { getSessionEpoch } from '../../auth/authScope';
-import { setSupabaseClientForTesting } from '../../auth/supabase';
+import { setSupabaseClientForTesting, getSupabaseClient } from '../../auth/supabase';
 import { createTestQueryClient, setNetworkOnline, resetNetworkOnline } from '../../test/testQueryClient';
 import { MockHttpServer, defaultMockPreferences } from '../../test/mockServer';
 
@@ -451,6 +452,206 @@ describe('ProfileScreen', () => {
     await waitFor(() => {
       expect(mockUpdateUser).toHaveBeenCalledWith({ data: { name: 'Sarah Reconnected' } });
       expect(getByTestId('profile-success-banner')).toBeTruthy();
+    });
+  });
+
+  describe('save races across owner switch, sign-out and the shared auth queue', () => {
+    const deferred = <T,>() => {
+      let resolve!: (v: T) => void;
+      const promise = new Promise<T>((r) => {
+        resolve = r;
+      });
+      return { promise, resolve };
+    };
+
+    const sdk = () => getSupabaseClient().auth as unknown as Record<string, jest.Mock>;
+    const patchCount = () => mockServer.getRequests().filter((r) => r.method === 'PATCH').length;
+    const saveDisabled = (view: ReturnType<typeof setupProviders>) =>
+      Boolean(view.getByTestId('profile-save-button').props.accessibilityState?.disabled);
+
+    const startSave = async (view: ReturnType<typeof setupProviders>, name = 'Sarah Modified') => {
+      await waitFor(() => {
+        expect(view.getByTestId('profile-name-input').props.value).toBe('Sarah Chen');
+      });
+      fireEvent.changeText(view.getByTestId('profile-name-input'), name);
+      fireEvent.press(view.getByTestId('profile-save-button'));
+    };
+
+    const switchToB = async () => {
+      await act(async () => {
+        currentSession = { user: { ...mockUserB }, access_token: 'fake-token-B' };
+        authStateCallback?.('SIGNED_IN', currentSession);
+      });
+    };
+
+    it('owner switches while preflight getSession is pending: no updateUser, no PATCH, B stays clean and can save', async () => {
+      const preflight = deferred<unknown>();
+      const view = setupProviders();
+      await waitFor(() => expect(view.getByTestId('profile-name-input').props.value).toBe('Sarah Chen'));
+      sdk().getSession.mockReturnValueOnce(preflight.promise);
+
+      await startSave(view);
+      await switchToB();
+
+      await act(async () => {
+        preflight.resolve({ data: { session: { user: { ...mockUserA } } }, error: null });
+        await new Promise((r) => setTimeout(r, 20));
+      });
+
+      expect(mockUpdateUser).not.toHaveBeenCalled();
+      expect(patchCount()).toBe(0);
+      expect(view.queryByTestId('profile-error-banner')).toBeNull();
+      expect(view.queryByTestId('profile-success-banner')).toBeNull();
+      await waitFor(() => expect(view.getByTestId('profile-name-input').props.value).toBe('Marcus Wright'));
+      expect(saveDisabled(view)).toBe(false);
+    });
+
+    it('sign-out while preflight getSession is pending: no updateUser and no stale message', async () => {
+      const preflight = deferred<unknown>();
+      const view = setupProviders();
+      await waitFor(() => expect(view.getByTestId('profile-name-input').props.value).toBe('Sarah Chen'));
+      sdk().getSession.mockReturnValueOnce(preflight.promise);
+
+      await startSave(view);
+      await act(async () => {
+        currentSession = null;
+        authStateCallback?.('SIGNED_OUT', null);
+      });
+
+      await act(async () => {
+        preflight.resolve({ data: { session: { user: { ...mockUserA } } }, error: null });
+        await new Promise((r) => setTimeout(r, 20));
+      });
+
+      expect(mockUpdateUser).not.toHaveBeenCalled();
+      expect(patchCount()).toBe(0);
+      expect(view.queryByTestId('profile-error-banner')).toBeNull();
+    });
+
+    it('null preflight session: no crash, no updateUser, clear error and the save can be retried', async () => {
+      const view = setupProviders();
+      await waitFor(() => expect(view.getByTestId('profile-name-input').props.value).toBe('Sarah Chen'));
+      sdk().getSession.mockResolvedValueOnce({ data: { session: null }, error: null });
+
+      await startSave(view);
+
+      await waitFor(() => expect(view.getByTestId('profile-error-banner')).toBeTruthy());
+      expect(mockUpdateUser).not.toHaveBeenCalled();
+      expect(patchCount()).toBe(0);
+      expect(saveDisabled(view)).toBe(false);
+
+      fireEvent.press(view.getByTestId('profile-save-button'));
+      await waitFor(() => expect(view.getByTestId('profile-success-banner')).toBeTruthy());
+      expect(mockUpdateUser).toHaveBeenCalledTimes(1);
+    });
+
+    it('preflight session without a user: fails closed with an error and no updateUser', async () => {
+      const view = setupProviders();
+      await waitFor(() => expect(view.getByTestId('profile-name-input').props.value).toBe('Sarah Chen'));
+      sdk().getSession.mockResolvedValueOnce({ data: { session: { access_token: 'x' } }, error: null });
+
+      await startSave(view);
+
+      await waitFor(() => expect(view.getByTestId('profile-error-banner')).toBeTruthy());
+      expect(mockUpdateUser).not.toHaveBeenCalled();
+      expect(saveDisabled(view)).toBe(false);
+    });
+
+    it('unmount while preflight getSession is pending: no updateUser, no PATCH', async () => {
+      const preflight = deferred<unknown>();
+      const view = setupProviders();
+      await waitFor(() => expect(view.getByTestId('profile-name-input').props.value).toBe('Sarah Chen'));
+      sdk().getSession.mockReturnValueOnce(preflight.promise);
+
+      await startSave(view);
+      view.unmount();
+
+      await act(async () => {
+        preflight.resolve({ data: { session: { user: { ...mockUserA } } }, error: null });
+        await new Promise((r) => setTimeout(r, 20));
+      });
+
+      expect(mockUpdateUser).not.toHaveBeenCalled();
+      expect(patchCount()).toBe(0);
+    });
+
+    describe('with a concurrent auth op holding the shared queue', () => {
+      let auth: AuthContextValue | null;
+      let signInGate: ReturnType<typeof deferred<unknown>>;
+
+      const AuthProbe = () => {
+        auth = useAuth();
+        return null;
+      };
+
+      const renderWithProbe = () =>
+        setupProviders(
+          'en',
+          <>
+            <AuthProbe />
+            <ProfileScreen />
+          </>
+        );
+
+      beforeEach(() => {
+        auth = null;
+        signInGate = deferred<unknown>();
+        sdk().signInWithPassword = jest.fn().mockReturnValueOnce(signInGate.promise);
+      });
+
+      const holdQueue = async () => {
+        await act(async () => {
+          // Floating: settles when the test releases the gate
+          auth!.signIn('sarah@chenstudio.co', 'pw').catch(() => undefined);
+        });
+        expect(sdk().signInWithPassword).toHaveBeenCalledTimes(1);
+      };
+
+      it('updateUser is serialized behind the in-flight auth op', async () => {
+        const view = renderWithProbe();
+        await waitFor(() => expect(view.getByTestId('profile-name-input').props.value).toBe('Sarah Chen'));
+        await holdQueue();
+
+        await startSave(view);
+        // Preflight has settled, but updateUser must wait for the queue
+        await act(async () => {
+          await new Promise((r) => setTimeout(r, 20));
+        });
+        expect(mockUpdateUser).not.toHaveBeenCalled();
+
+        await act(async () => {
+          signInGate.resolve({ data: {}, error: null });
+        });
+
+        await waitFor(() => expect(view.getByTestId('profile-success-banner')).toBeTruthy());
+        expect(mockUpdateUser).toHaveBeenCalledTimes(1);
+        expect(patchCount()).toBe(1);
+      });
+
+      it('owner switches while updateUser waits in the queue: updateUser never runs for the old owner', async () => {
+        const view = renderWithProbe();
+        await waitFor(() => expect(view.getByTestId('profile-name-input').props.value).toBe('Sarah Chen'));
+        await holdQueue();
+
+        await startSave(view);
+        await act(async () => {
+          await new Promise((r) => setTimeout(r, 20));
+        });
+        expect(mockUpdateUser).not.toHaveBeenCalled();
+
+        await switchToB();
+        await act(async () => {
+          signInGate.resolve({ data: {}, error: null });
+          await new Promise((r) => setTimeout(r, 20));
+        });
+
+        expect(mockUpdateUser).not.toHaveBeenCalled();
+        expect(patchCount()).toBe(0);
+        expect(view.queryByTestId('profile-error-banner')).toBeNull();
+        expect(view.queryByTestId('profile-success-banner')).toBeNull();
+        await waitFor(() => expect(view.getByTestId('profile-name-input').props.value).toBe('Marcus Wright'));
+        expect(saveDisabled(view)).toBe(false);
+      });
     });
   });
 });
