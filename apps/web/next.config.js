@@ -13,6 +13,7 @@ const withSerwist = withSerwistInit({
 
 const nextConfig = {
   reactStrictMode: true,
+  transpilePackages: ['@haseela/shared'],
 };
 
 module.exports = withSerwist(nextConfig);

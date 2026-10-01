@@ -25,6 +25,7 @@ import {
   loadFinancialSnapshot
 } from '@/services/financialApi';
 import { reconcileFinancialSnapshot, removeClientTransactions } from '@/services/financialSync';
+import { computeNextBillingDate } from '@haseela/shared/lib/billing';
 
 const STORAGE_KEY = 'flowledger-financial-state';
 const PREFERENCES_KEY = 'flowledger-preferences';
@@ -36,14 +37,7 @@ const getStorageKey = () => {
 
 const getPreferencesKey = (userId: string) => `${PREFERENCES_KEY}:${userId}`;
 
-export const computeNextBillingDate = (billingDay: number, from = new Date()) => {
-  const safeDay = Math.max(1, Math.min(28, billingDay || 1));
-  const candidate = new Date(from.getFullYear(), from.getMonth(), safeDay, 12);
-  const today = new Date(from.getFullYear(), from.getMonth(), from.getDate(), 12);
-
-  if (candidate >= today) return candidate.toISOString().slice(0, 10);
-  return new Date(from.getFullYear(), from.getMonth() + 1, safeDay, 12).toISOString().slice(0, 10);
-};
+export { computeNextBillingDate };
 
 interface FinancialStore {
   clients: Client[];
