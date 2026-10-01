@@ -926,6 +926,20 @@ export const en = {
   'settings.currencyConfirm': 'Confirm',
   'settings.currencyCancel': 'Cancel',
 
+  // Account deletion (mobile)
+  'settings.section.danger': 'Danger zone',
+  'settings.delete.screenTitle': 'Delete account',
+  'settings.delete.warningTitle': 'This cannot be undone',
+  'settings.delete.processNote': 'You will be signed out on this device. If your connection drops, the deletion still finishes on our servers.',
+  'settings.delete.confirmLabel': 'Type {word} to confirm',
+  'settings.delete.confirmWord': 'DELETE',
+  'settings.delete.confirmPlaceholder': 'Type here',
+  'settings.delete.offline': 'You need an internet connection to delete your account.',
+  'settings.delete.error.failed': 'We could not start deleting your account, so nothing was deleted. Please try again.',
+  'settings.delete.action.deleting': 'Deleting…',
+  'settings.delete.notice.deleted': 'Your account has been deleted.',
+  'settings.delete.notice.pending': 'Your account deletion is being completed. You have been signed out.',
+
   // Offline
   'offline.title': 'You’re offline',
   'offline.body': 'Haseeela needs a connection to load your latest clients, subscriptions, and transactions. Anything already open in this session stays available.',

@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { useTheme } from '../../theme';
 
-export type ButtonVariant = 'primary' | 'secondary' | 'link';
+export type ButtonVariant = 'primary' | 'secondary' | 'link' | 'destructive';
 
 export interface ButtonProps {
   onPress?: () => void;
@@ -49,24 +49,37 @@ export function Button({
   const isPrimary = variant === 'primary';
   const isSecondary = variant === 'secondary';
   const isLink = variant === 'link';
+  const isDestructive = variant === 'destructive';
 
   // Base background & border colors per variant
   const backgroundColor = isPrimary
     ? theme.colors.accent
     : isSecondary
       ? theme.colors.surface
-      : 'transparent';
+      : isDestructive
+        ? theme.colors.negativeTint
+        : 'transparent';
 
-  const borderColor = isSecondary ? theme.colors.border : 'transparent';
-  const borderWidth = isSecondary ? 1 : 0;
+  const borderColor = isSecondary
+    ? theme.colors.border
+    : isDestructive
+      ? theme.colors.negative
+      : 'transparent';
+  const borderWidth = isSecondary || isDestructive ? 1 : 0;
 
   const textColor = isPrimary
     ? theme.colors.accentFg
     : isSecondary
       ? theme.colors.text
-      : theme.colors.accent;
+      : isDestructive
+        ? theme.colors.negativeText
+        : theme.colors.accent;
 
-  const indicatorColor = isPrimary ? theme.colors.accentFg : theme.colors.accent;
+  const indicatorColor = isPrimary
+    ? theme.colors.accentFg
+    : isDestructive
+      ? theme.colors.negativeText
+      : theme.colors.accent;
 
   const isIconRight = iconPosition === 'right';
 

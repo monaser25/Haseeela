@@ -4,3 +4,4 @@ export * from './subscriptionsApi';
 export * from './invoicesApi';
 export * from './invoiceHooks';
 export * from './hooks';
+export * from './accountApi';

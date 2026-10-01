@@ -195,6 +195,7 @@ export class MockHttpServer {
 
   private requests: RecordedRequest[] = [];
   private errorOverrides: Map<string, { status: number; body: any; once?: boolean }> = new Map();
+  private networkFailures: Set<string> = new Set();
   private pendingRoutes: Set<string> = new Set();
   private pendingResolvers: Map<string, Array<{ resolve: (res: Response) => void; reject: (err: any) => void }>> =
     new Map();
@@ -229,6 +230,7 @@ export class MockHttpServer {
     this.requests = [];
     this.minMobileVersion = '1.0.0';
     this.errorOverrides.clear();
+    this.networkFailures.clear();
     this.pendingRoutes.clear();
     this.pendingResolvers.clear();
     this.customHandlers = [];
@@ -268,6 +270,11 @@ export class MockHttpServer {
 
   clearError(pathSnippet: string) {
     this.errorOverrides.delete(pathSnippet);
+  }
+
+  /** Makes matching requests reject like a dropped connection (after being recorded as sent). */
+  setNetworkFailure(pathSnippet: string, method?: string) {
+    this.networkFailures.add(method ? `${method.toUpperCase()}:${pathSnippet}` : pathSnippet);
   }
 
   setPending(pathSnippet: string, method?: string) {
@@ -357,6 +364,14 @@ export class MockHttpServer {
     };
     this.requests.push(recorded);
 
+    // Check simulated connection drops
+    for (const key of Array.from(this.networkFailures)) {
+      const [failMethod, failPath] = key.includes(':') ? key.split(':') : [undefined, key];
+      if ((!failMethod || failMethod === method) && path.includes(failPath)) {
+        throw new TypeError('Network request failed');
+      }
+    }
+
     // Check error overrides
     for (const [key, err] of Array.from(this.errorOverrides.entries())) {
       if (path.includes(key)) {
@@ -425,6 +440,11 @@ export class MockHttpServer {
         time: new Date().toISOString(),
         minMobileVersion: this.minMobileVersion,
       });
+    }
+
+    // 3e. DELETE /api/user/delete (account deletion)
+    if (method === 'DELETE' && path === '/api/user/delete') {
+      return createMockResponse(200, { ok: true });
     }
 
     // 3c. POST /api/notifications/mark-read

@@ -928,6 +928,20 @@ export const ar: Messages = {
   'settings.currencyConfirm': 'تأكيد',
   'settings.currencyCancel': 'إلغاء',
 
+  // Account deletion (mobile)
+  'settings.section.danger': 'منطقة الخطر',
+  'settings.delete.screenTitle': 'حذف الحساب',
+  'settings.delete.warningTitle': 'لا يمكن التراجع عن هذا الإجراء',
+  'settings.delete.processNote': 'سيتم تسجيل خروجك من هذا الجهاز. إذا انقطع اتصالك، فسيكتمل الحذف على خوادمنا.',
+  'settings.delete.confirmLabel': 'اكتب {word} للتأكيد',
+  'settings.delete.confirmWord': 'حذف',
+  'settings.delete.confirmPlaceholder': 'اكتب هنا',
+  'settings.delete.offline': 'تحتاج إلى اتصال بالإنترنت لحذف حسابك.',
+  'settings.delete.error.failed': 'تعذّر بدء حذف حسابك، ولم يتم حذف أي شيء. يرجى المحاولة مرة أخرى.',
+  'settings.delete.action.deleting': 'جارٍ الحذف…',
+  'settings.delete.notice.deleted': 'تم حذف حسابك.',
+  'settings.delete.notice.pending': 'جارٍ إكمال حذف حسابك. تم تسجيل خروجك.',
+
   // Offline
   'offline.title': 'أنت غير متصل بالإنترنت',
   'offline.body': 'تحتاج حصيــــلة إلى اتصال بالإنترنت لتحميل أحدث عملائك، واشتراكاتك، ومعاملاتك. أي شيء مفتوح بالفعل في هذه الجلسة سيبقى متاحًا.',
