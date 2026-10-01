@@ -211,3 +211,21 @@ model Notification {
   @@index([userId])
   @@index([userId, read])
 }
+
+model AccountDeletion {
+  id             String    @id @default(uuid())
+  userId         String    @unique
+  status         String    @default("PENDING") // PENDING, AUTH_DELETED, COMPLETED
+  isDev          Boolean   @default(false)
+  attempts       Int       @default(0)
+  lastErrorCode  String?
+  ownerToken     String?
+  leaseExpiresAt DateTime?
+  completedAt    DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@index([status])
+  @@index([status, leaseExpiresAt])
+}
+
