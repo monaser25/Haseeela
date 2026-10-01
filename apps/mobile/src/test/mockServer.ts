@@ -190,6 +190,9 @@ export class MockHttpServer {
     notifications: [...defaultMockNotifications],
   };
 
+  /** Value returned by GET /api/health. */
+  minMobileVersion = '1.0.0';
+
   private requests: RecordedRequest[] = [];
   private errorOverrides: Map<string, { status: number; body: any; once?: boolean }> = new Map();
   private pendingRoutes: Set<string> = new Set();
@@ -224,6 +227,7 @@ export class MockHttpServer {
         : [...defaultMockNotifications],
     };
     this.requests = [];
+    this.minMobileVersion = '1.0.0';
     this.errorOverrides.clear();
     this.pendingRoutes.clear();
     this.pendingResolvers.clear();
@@ -409,6 +413,18 @@ export class MockHttpServer {
       const notifs = this.state.notifications || [];
       const unread = notifs.filter((n) => !n.read).length;
       return createMockResponse(200, { notifications: notifs, unread });
+    }
+
+    // 3d. Push device tokens and health (minMobileVersion)
+    if (method === 'POST' && (path === '/api/devices/register' || path === '/api/devices/unregister')) {
+      return createMockResponse(200, { ok: true });
+    }
+    if (method === 'GET' && path === '/api/health') {
+      return createMockResponse(200, {
+        status: 'ok',
+        time: new Date().toISOString(),
+        minMobileVersion: this.minMobileVersion,
+      });
     }
 
     // 3c. POST /api/notifications/mark-read

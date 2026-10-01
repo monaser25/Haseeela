@@ -1256,6 +1256,18 @@ export const en = {
   'home.themeDark': 'Dark Mode',
   'home.switchThemeLightA11y': 'Switch to light theme',
   'home.switchThemeDarkA11y': 'Switch to dark theme',
+
+  'push.billingDue.title': 'Payment coming up',
+  'push.billingDue.body': 'A subscription or client payment is due soon.',
+  'push.invoiceOverdue.title': 'Invoice overdue',
+  'push.invoiceOverdue.body': 'An invoice is past its due date.',
+  'push.reminders.title': 'New reminders',
+  'push.reminders.body': 'You have new reminders waiting.',
+
+  'update.required.title': 'Update required',
+  'update.required.body': 'This version of Haseela is no longer supported. Please update to the latest version to continue.',
+  'update.required.button': 'Update now',
+  'update.required.openFailed': 'Could not open the store. Please search for Haseela in your app store.',
 };
 
 export type Messages = typeof en;

@@ -1,16 +1,12 @@
 import { prisma } from '@/server/prisma';
+import { PUSH_ROUTE_ALLOWLIST, isAllowedPushRoute, type PushRoute } from '@haseela/shared/lib/pushRoutes';
 
 export const EXPO_PUSH_URL = 'https://exp.host/--/api/v2/push/send';
 export const EXPO_PUSH_BATCH_SIZE = 100;
 const REQUEST_TIMEOUT_MS = 10_000;
 
-/** Navigation targets a push may deep-link to. Must match routes in apps/mobile/src/app. */
-export const PUSH_ROUTE_ALLOWLIST = [
-  '/(app)/invoice/[id]',
-  '/(app)/subscriptions',
-  '/(app)/notifications',
-] as const;
-export type PushRoute = (typeof PUSH_ROUTE_ALLOWLIST)[number];
+export { PUSH_ROUTE_ALLOWLIST, isAllowedPushRoute };
+export type { PushRoute };
 
 export type PushKind = 'billing_due' | 'invoice_overdue' | 'reminders';
 
@@ -60,17 +56,6 @@ const COPY: Record<PushKind, { titleKey: string; bodyKey: string; title: string;
     title: 'Haseela',
     body: 'You have new reminders.',
   },
-};
-
-const ID_PATTERN = /^[A-Za-z0-9_-]{1,64}$/;
-
-/** Returns true only for allowlisted routes with correctly-shaped params. */
-export const isAllowedPushRoute = (route: unknown, params?: { id?: unknown }): boolean => {
-  if (typeof route !== 'string' || !(PUSH_ROUTE_ALLOWLIST as readonly string[]).includes(route)) return false;
-  if (route === '/(app)/invoice/[id]') {
-    return typeof params?.id === 'string' && ID_PATTERN.test(params.id);
-  }
-  return params === undefined;
 };
 
 export const buildPushPayload = (token: string, message: PushMessage): ExpoPushMessage => {

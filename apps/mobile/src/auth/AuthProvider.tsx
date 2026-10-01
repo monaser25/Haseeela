@@ -11,6 +11,7 @@ import {
   bumpSessionEpoch,
   enqueueAuthOp,
 } from './authScope';
+import { beginPushUnregister } from '../services/push/unregisterPush';
 
 export {
   getSessionEpoch,
@@ -263,6 +264,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
       signOut: async () => {
         const id = ++initiationSeqRef.current;
         const initiatingOwner = currentUserIdRef.current;
+        // Best-effort device-token unregister for the outgoing owner. It must start here: the
+        // lines below clear the owner and token. It is only awaited inside the queued SDK sign-out
+        // (bounded by its own timeout, never rejects), so local sign-out is not blocked by the network.
+        const pushUnregister = beginPushUnregister({
+          ownerId: initiatingOwner,
+          accessToken: session?.user?.id === initiatingOwner ? session?.access_token : undefined,
+        });
         activeInitiationRef.current = { id, type: 'signOut', identifier: initiatingOwner };
         // Same owner or signed out: run. A different owner means a newer session we must not kill.
         const mayRunLocalFallback = () => {
@@ -278,7 +286,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
         setStatus('signedOut');
 
         try {
-          const { error } = await enqueueAuthOp(() => client.auth.signOut());
+          const { error } = await enqueueAuthOp(() =>
+            pushUnregister ? pushUnregister.then(() => client.auth.signOut()) : client.auth.signOut()
+          );
           // An SDK event re-publishing the same user clears activeInitiationRef, so gate on
           // supersession (checked again inside the queued op) rather than on that ref.
           if (error && !isSuperseded(id)) {
