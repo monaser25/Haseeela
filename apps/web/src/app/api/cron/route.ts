@@ -52,7 +52,7 @@ export const GET = async (request: Request) => withApiError(request, async () =>
       await prisma.$transaction(async (tx) => {
         await runDueRecurringPaymentsInTransaction(tx, userId, now);
       });
-      await generateNotifications(userId);
+      await generateNotifications(userId, { sendPush: true });
       processed += 1;
     } catch (err) {
       console.error(`Cron failed for user ${userId}`, err);

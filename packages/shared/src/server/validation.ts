@@ -121,3 +121,16 @@ export const pendingPaymentUpdateSchema = z.object({
 export const pendingPaymentCompleteSchema = z.object({
   completedDate: optionalDateString,
 });
+
+export const EXPO_PUSH_TOKEN_PATTERN = /^Expo(?:nent)?PushToken\[[A-Za-z0-9_-]+\]$/;
+
+const expoPushToken = z.string().trim().max(200).regex(EXPO_PUSH_TOKEN_PATTERN, 'Invalid Expo push token');
+
+export const deviceRegisterSchema = z.object({
+  token: expoPushToken,
+  platform: z.enum(['ios', 'android']),
+});
+
+export const deviceUnregisterSchema = z.object({
+  token: expoPushToken,
+});
