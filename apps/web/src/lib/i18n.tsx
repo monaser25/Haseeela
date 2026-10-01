@@ -74,6 +74,14 @@ const ERROR_KEYS_MAP: Record<string, MessageKey> = {
   'Only active subscriptions can record payments': 'errors.subNotActive',
   'Using locally cached data. API sync will resume when the backend is available.': 'errors.cachedData',
   'Financial data is unavailable. Check the API connection and try again.': 'errors.dataUnavailable',
+  'Amount must be greater than 0': 'errors.amountPositive',
+  'Transaction not found': 'errors.transactionNotFound',
+  'Only pending payments can be updated': 'errors.onlyPendingUpdate',
+  'Only pending payments can be deleted': 'errors.onlyPendingDelete',
+  'Payment is not pending': 'errors.paymentNotPending',
+  'Only completed transactions can be reverted': 'errors.onlyCompletedRevert',
+  'This transaction was not created from a pending payment': 'errors.notFromPending',
+  'A transaction already exists for that date': 'errors.transactionDateCollision',
 };
 
 export const translateError = (msg: string, t: (key: MessageKey, vars?: MessageVars) => string) => {

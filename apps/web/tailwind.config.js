@@ -36,16 +36,25 @@ module.exports = {
           tint: "var(--positive-tint)",
           border: "color-mix(in srgb, var(--positive) 22%, transparent)",
         },
+        "positive-text": "var(--positive-text)",
         negative: {
           DEFAULT: "var(--negative)",
           tint: "var(--negative-tint)",
           border: "color-mix(in srgb, var(--negative) 22%, transparent)",
         },
+        "negative-text": "var(--negative-text)",
         warning: {
           DEFAULT: "var(--warning)",
           tint: "var(--warning-tint)",
           border: "color-mix(in srgb, var(--warning) 22%, transparent)",
         },
+        "warning-text": "var(--warning-text)",
+        pending: {
+          DEFAULT: "var(--pending)",
+          tint: "var(--pending-tint)",
+          border: "color-mix(in srgb, var(--pending) 22%, transparent)",
+        },
+        "pending-text": "var(--pending-text)",
         info: {
           DEFAULT: "var(--info)",
           tint: "var(--info-tint)",

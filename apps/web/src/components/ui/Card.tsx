@@ -11,20 +11,27 @@ function cn(...inputs: ClassValue[]) {
 export interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
   pad?: number | string;
   hover?: boolean;
+  tier?: 'raised' | 'base' | 'flush';
 }
 
 export const Card = React.forwardRef<HTMLDivElement, CardProps>(
-  ({ className, pad = 20, hover, onClick, style, children, ...props }, ref) => {
-    
-    // For custom pixel padding
-    const paddingStyle = typeof pad === 'number' ? { padding: pad } : { padding: pad };
-    
+  ({ className, pad, hover, onClick, style, children, tier = 'base', ...props }, ref) => {
+    const resolvedPad = pad !== undefined ? pad : (tier === 'flush' ? undefined : 20);
+    const paddingStyle = resolvedPad !== undefined ? { padding: resolvedPad } : undefined;
+
+    const tierClass =
+      tier === 'raised'
+        ? "bg-surface-elevated border border-border rounded-xl shadow-md"
+        : tier === 'flush'
+        ? ""
+        : "bg-surface border border-border rounded-lg";
+
     return (
       <div 
         ref={ref}
         onClick={onClick}
         className={cn(
-          "bg-surface border border-border rounded-lg",
+          tierClass,
           onClick ? "cursor-pointer focus-ring" : "",
           hover ? "transition-all duration-base ease-out hover:-translate-y-0.5 hover:shadow-md hover:border-border-strong" : "",
           className
@@ -71,8 +78,8 @@ export interface StatCardProps extends Omit<CardProps, 'title'> {
   label: string;
   value: React.ReactNode;
   delta?: number;
-  tone?: 'positive' | 'negative' | 'neutral';
-  sub?: string;
+  tone?: 'positive' | 'negative' | 'neutral' | 'warning';
+  sub?: React.ReactNode;
   sparkline?: React.ReactNode;
   icon?: string;
 }
@@ -90,7 +97,7 @@ export function StatCard({
   hover,
   ...props 
 }: StatCardProps) {
-  const valColor = tone === "positive" ? "text-positive" : tone === "negative" ? "text-negative" : "text-text";
+  const valColor = tone === "positive" ? "text-positive-text" : tone === "negative" ? "text-negative-text" : tone === "warning" ? "text-warning-text" : "text-text";
   
   return (
     <Card 

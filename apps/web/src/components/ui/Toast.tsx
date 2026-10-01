@@ -3,33 +3,49 @@
 import React, { createContext, useCallback, useContext, useState } from 'react';
 import { Icon } from './Icon';
 
-type ToastTone = 'success' | 'error' | 'info';
+export type ToastTone = 'success' | 'error' | 'info';
+
+export interface ToastAction {
+  label: string;
+  onClick: () => void | Promise<void>;
+}
+
+export interface ToastOptions {
+  tone?: ToastTone;
+  action?: ToastAction;
+  duration?: number;
+}
 
 interface ToastItem {
   id: string;
   tone: ToastTone;
   message: string;
+  action?: ToastAction;
 }
 
 interface ToastContextValue {
-  toast: (message: string, tone?: ToastTone) => void;
+  toast: (message: string, optionsOrTone?: ToastTone | ToastOptions) => void;
 }
 
 const ToastContext = createContext<ToastContextValue | null>(null);
 
 const toneConfig: Record<ToastTone, { icon: string; cls: string }> = {
-  success: { icon: 'checkCircle', cls: 'text-positive' },
-  error: { icon: 'alertCircle', cls: 'text-negative' },
+  success: { icon: 'checkCircle', cls: 'text-positive-text' },
+  error: { icon: 'alertCircle', cls: 'text-negative-text' },
   info: { icon: 'info', cls: 'text-info' },
 };
 
 export function ToastProvider({ children }: { children: React.ReactNode }) {
   const [items, setItems] = useState<ToastItem[]>([]);
 
-  const toast = useCallback((message: string, tone: ToastTone = 'success') => {
+  const toast = useCallback((message: string, optionsOrTone?: ToastTone | ToastOptions) => {
     const id = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
-    setItems((prev) => [...prev, { id, tone, message }]);
-    setTimeout(() => setItems((prev) => prev.filter((t) => t.id !== id)), 4000);
+    const tone: ToastTone = typeof optionsOrTone === 'string' ? optionsOrTone : optionsOrTone?.tone || 'success';
+    const action = typeof optionsOrTone === 'object' ? optionsOrTone.action : undefined;
+    const duration = typeof optionsOrTone === 'object' && optionsOrTone.duration ? optionsOrTone.duration : action ? 6000 : 4000;
+
+    setItems((prev) => [...prev, { id, tone, message, action }]);
+    setTimeout(() => setItems((prev) => prev.filter((t) => t.id !== id)), duration);
   }, []);
 
   return (
@@ -48,6 +64,18 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
                 <Icon name={cfg.icon} size={18} />
               </span>
               <span className="t-body-m flex-1 min-w-0">{t.message}</span>
+              {t.action && (
+                <button
+                  type="button"
+                  onClick={async () => {
+                    setItems((prev) => prev.filter((x) => x.id !== t.id));
+                    await t.action?.onClick();
+                  }}
+                  className="text-xs font-semibold text-accent hover:underline focus-ring rounded-sm px-1.5 py-0.5 shrink-0"
+                >
+                  {t.action.label}
+                </button>
+              )}
               <button
                 onClick={() => setItems((prev) => prev.filter((x) => x.id !== t.id))}
                 aria-label="Dismiss"

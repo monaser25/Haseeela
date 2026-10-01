@@ -38,6 +38,8 @@ export interface Transaction {
   type: 'INCOME' | 'EXPENSE';
   status: 'COMPLETED' | 'PENDING';
   date: string;
+  expectedDate?: string;
+  completedAt?: string;
   notes?: string;
   sourceType: 'manual' | 'client' | 'subscription';
   sourceId?: string;
@@ -93,6 +95,8 @@ export interface OverviewStats {
   subscriptionBurden: number;
   totalClients: number;
   activeClients: number;
+  pendingTotal: number;
+  pendingCount: number;
 }
 
 export type CurrencyCode = 'USD' | 'EUR' | 'GBP' | 'EGP' | 'SAR' | 'AED';

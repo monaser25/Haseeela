@@ -24,10 +24,16 @@
     /* ---- Semantic (finance) ---- */
     --positive:      #10B981;
     --positive-tint: #ECFDF5;
+    --positive-text: #047857;   /* emerald-700 — 5.48:1 on #FFFFFF */
     --negative:      #EF4444;
     --negative-tint: #FEF2F2;
+    --negative-text: #DC2626;   /* red-600     — 4.83:1 on #FFFFFF */
     --warning:       #F59E0B;
     --warning-tint:  #FFFBEB;
+    --warning-text:  #B45309;   /* amber-700   — 5.02:1 on #FFFFFF */
+    --pending:       #F59E0B;
+    --pending-tint:  #FFFBEB;
+    --pending-text:  var(--warning-text);
     --info:          #0EA5E9;
     --info-tint:     #F0F9FF;
 
@@ -152,10 +158,16 @@
 
     --positive:      #34D399;
     --positive-tint: #0E2A22;
+    --positive-text: var(--positive);
     --negative:      #F87171;
     --negative-tint: #2A1414;
+    --negative-text: var(--negative);
     --warning:       #FBBF24;
     --warning-tint:  #2A2010;
+    --warning-text:  var(--warning);
+    --pending:       #FBBF24;
+    --pending-tint:  #2A2010;
+    --pending-text:  var(--pending);
     --info:          #38BDF8;
     --info-tint:     #082F49;
 
@@ -269,3 +281,12 @@
 @keyframes fl-spin { to{ transform:rotate(360deg) } }
 @keyframes fl-scale-in { from{opacity:0; transform:scale(.96)} to{opacity:1; transform:scale(1)} }
 @keyframes fl-pop { 0%{transform:scale(.8); opacity:0} 60%{transform:scale(1.05)} 100%{transform:scale(1); opacity:1} }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

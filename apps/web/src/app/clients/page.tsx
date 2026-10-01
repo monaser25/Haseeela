@@ -11,6 +11,7 @@ import { formatDate, formatTransactionName } from '@/lib/format';
 import { useLocale } from '@/lib/i18n';
 import { latinTokenClass } from '@/lib/textDirection';
 import { Avatar, Badge, Button, Card, EmptyState, Field, Icon, IconButton, InlineAlert, Input, SectionHeader, Select, StatCard } from '@/components/ui';
+import { PendingPaymentsSection } from '@/components/PendingPayments';
 
 type ModalState = { mode: 'add' } | { mode: 'edit'; client: Client } | null;
 type DeleteTarget = { client: Client; transactionCount: number; revenueTotal: number } | null;
@@ -191,15 +192,29 @@ export default function ClientsPage() {
           <Button icon="Plus" onClick={openAddModal} className="w-full sm:w-auto">{t('clients.addClient')}</Button>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatCard label={t('clients.stats.active')} value={clientStats.active} icon="Users" />
-          <StatCard label={t('clients.stats.retainers')} value={clientStats.retainers} icon="Repeat" />
-          <StatCard label={t('clients.stats.recordedRevenue')} value={money.format(clientStats.recordedRevenue)} tone="positive" icon="TrendingUp" />
-          <StatCard label={t('clients.stats.archived')} value={clientStats.archived} icon="Archive" />
+        <div className="border-y border-border py-3 grid grid-cols-2 sm:grid-cols-4 divide-x divide-border">
+          <div className="px-3 sm:px-4">
+            <span className="t-caption text-text-muted">{t('clients.stats.active')}</span>
+            <div className="t-h3 tnum text-text mt-0.5" dir="ltr">{clientStats.active}</div>
+          </div>
+          <div className="px-3 sm:px-4">
+            <span className="t-caption text-text-muted">{t('clients.stats.retainers')}</span>
+            <div className="t-h3 tnum text-text mt-0.5" dir="ltr">{clientStats.retainers}</div>
+          </div>
+          <div className="px-3 sm:px-4">
+            <span className="t-caption text-text-muted">{t('clients.stats.recordedRevenue')}</span>
+            <div className="t-h3 tnum text-positive-text mt-0.5" dir="ltr">{money.format(clientStats.recordedRevenue)}</div>
+          </div>
+          <div className="px-3 sm:px-4">
+            <span className="t-caption text-text-muted">{t('clients.stats.archived')}</span>
+            <div className="t-h3 tnum text-text-muted mt-0.5" dir="ltr">{clientStats.archived}</div>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 xl:grid-cols-[1fr_360px] gap-6">
-        <Card pad={0} className="overflow-hidden">
+        <div className="space-y-6">
+        <PendingPaymentsSection />
+        <Card tier="raised" pad={0} className="overflow-hidden">
           <div className="p-4 sm:p-5 border-b border-border flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center">
             <div>
               <SectionHeader title={t('clients.book.title')} sub={visibleClients.length === 1 ? t('clients.book.shown', { count: String(visibleClients.length) }) : t('clients.book.shownPlural', { count: String(visibleClients.length) })} className="mb-0" />
@@ -239,12 +254,12 @@ export default function ClientsPage() {
                   </div>
                   <div className="flex items-center justify-between gap-3 sm:justify-end">
                     <div className="text-left sm:text-right">
-                      <div className="text-sm font-mono font-semibold text-positive">{money.format(totalPaid)}</div>
+                      <div className="text-sm font-mono font-semibold text-positive-text" dir="ltr">{money.format(totalPaid)}</div>
                       <div className="text-xs text-text-muted">{t('clients.payment.totalPaid')}</div>
                     </div>
                     <div className="flex items-center gap-2">
                       {client.paymentType === 'retainer' && client.status === 'ACTIVE' && !client.archivedAt && (
-                        <IconButton icon="DollarSign" size="sm" disabled={recordingId === client.id} onClick={() => recordPayment(client)} title={t('clients.actions.recordPayment', { name: client.name })} className="text-positive hover:text-positive" />
+                        <IconButton icon="DollarSign" size="sm" disabled={recordingId === client.id} onClick={() => recordPayment(client)} title={t('clients.actions.recordPayment', { name: client.name })} className="text-positive-text hover:text-positive-text" />
                       )}
                       <IconButton icon="Pencil" size="sm" onClick={() => openEditModal(client)} title={t('clients.actions.edit', { name: client.name })} />
                       <Button type="button" variant="secondary" size="sm" icon="Archive" onClick={() => requestDelete(client)}>
@@ -262,12 +277,34 @@ export default function ClientsPage() {
                       <div className="text-xs text-text-muted mt-2">{t('clients.history.empty')}</div>
                     ) : (
                       <div className="mt-2 space-y-1">
-                        {clientTransactions.slice(0, 3).map((tx) => (
-                          <div key={tx.id} className="flex items-center justify-between gap-3 text-xs">
-                            <span className={`truncate text-text ${latinTokenClass(tx.name || tx.notes)}`}>{formatTransactionName(tx.name || tx.notes || t('clients.history.paymentFallback'), t as any)}</span>
-                            <span className="shrink-0 text-text-muted"><span className="date-token">{formatDate(tx.date, locale)}</span> - {money.format(tx.amount)}</span>
-                          </div>
-                        ))}
+                        {clientTransactions.slice(0, 3).map((tx) => {
+                          const originatedAsPending = !!(tx.expectedDate && tx.status === 'COMPLETED');
+                          const datesDiffer = originatedAsPending && tx.expectedDate?.slice(0, 10) !== tx.date.slice(0, 10);
+                          return (
+                            <div key={tx.id} className="flex items-center justify-between gap-3 text-xs">
+                              <div className="flex items-center gap-2 truncate min-w-0">
+                                <span className={`truncate text-text ${latinTokenClass(tx.name || tx.notes)}`}>
+                                  {formatTransactionName(tx.name || tx.notes || t('clients.history.paymentFallback'), t as any)}
+                                </span>
+                                {originatedAsPending && (
+                                  <Badge tone="positive" className="text-[10px] h-[18px] px-1.5 shrink-0">
+                                    {t('pending.status.completed')}
+                                  </Badge>
+                                )}
+                              </div>
+                              <div className="shrink-0 flex items-center gap-1.5 text-text-muted">
+                                {datesDiffer && (
+                                  <span className="text-[11px] text-text-muted">
+                                    ({t('pending.history.expectedDate', { date: <span className="date-token">{formatDate(tx.expectedDate!, locale)}</span> })})
+                                  </span>
+                                )}
+                                <span className="date-token">{formatDate(tx.date, locale)}</span>
+                                <span>-</span>
+                                <span dir="ltr">{money.format(tx.amount)}</span>
+                              </div>
+                            </div>
+                          );
+                        })}
                       </div>
                     )}
                   </div>
@@ -276,6 +313,7 @@ export default function ClientsPage() {
             </div>
           )}
         </Card>
+        </div>
 
         <div className="space-y-6">
           <Card className="h-[300px] overflow-hidden" pad={20}>
@@ -291,7 +329,7 @@ export default function ClientsPage() {
             {topClient ? (
               <div className="mt-4">
                 <div className={`t-h3 text-text ${latinTokenClass(topClient.name)}`}>{topClient.name}</div>
-                <div className="t-display text-positive mt-2">{moneyLong.format(revenueForClient(topClient.id))}</div>
+                <div className="t-display text-positive-text mt-2">{money.format(revenueForClient(topClient.id))}</div>
                 <p className="text-sm text-text-muted mt-1">{t('clients.top.totalRevenue')}</p>
               </div>
             ) : <p className="text-sm text-text-muted mt-4">{t('clients.top.empty')}</p>}
@@ -319,7 +357,7 @@ export default function ClientsPage() {
               <div className="rounded-md bg-info-tint border border-info-border p-3 text-sm text-info">
                 <span className="font-medium">{t('clients.delete.archiveLabel')}</span> {deleteTarget.transactionCount === 1 ? t('clients.delete.archiveNotice', { count: String(deleteTarget.transactionCount), amount: moneyLong.format(deleteTarget.revenueTotal) }) : t('clients.delete.archiveNoticePlural', { count: String(deleteTarget.transactionCount), amount: moneyLong.format(deleteTarget.revenueTotal) })}
               </div>
-              <div className="rounded-md bg-negative-tint border border-negative-border p-3 text-sm text-negative">
+              <div className="rounded-md bg-negative-tint border border-negative-border p-3 text-sm text-negative-text">
                 <span className="font-medium">{t('clients.delete.deleteLabel')}</span> {deleteTarget.transactionCount === 1 ? t('clients.delete.deleteNotice', { count: String(deleteTarget.transactionCount), amount: moneyLong.format(deleteTarget.revenueTotal) }) : t('clients.delete.deleteNoticePlural', { count: String(deleteTarget.transactionCount), amount: moneyLong.format(deleteTarget.revenueTotal) })}
               </div>
             </div>

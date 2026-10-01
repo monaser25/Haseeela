@@ -78,6 +78,56 @@ export const getSubscriptionBurden = (subscriptions: Subscription[]) => {
     }, 0);
 };
 
+export const selectPendingPayments = (transactions: Transaction[]) => {
+  return [...transactions]
+    .filter(tx => tx.type === 'INCOME' && tx.status === 'PENDING')
+    .sort((a, b) => {
+      const dateA = new Date(a.expectedDate || a.date).getTime();
+      const dateB = new Date(b.expectedDate || b.date).getTime();
+      return dateA - dateB;
+    });
+};
+
+export const selectPendingTotal = (transactions: Transaction[]) => {
+  return selectPendingPayments(transactions).reduce((sum, tx) => sum + tx.amount, 0);
+};
+
+export const selectPendingCount = (transactions: Transaction[]) => {
+  return selectPendingPayments(transactions).length;
+};
+
+const toDateKey = (val: Date | string) => {
+  if (typeof val === 'string' && val.length >= 10) return val.slice(0, 10);
+  const date = val instanceof Date ? val : new Date(val);
+  return date.toISOString().slice(0, 10);
+};
+
+export const daysUntilDate = (targetDate?: Date | string | null, today: Date | string = new Date()): number | null => {
+  if (!targetDate) return null;
+  const targetKey = toDateKey(targetDate);
+  const todayKey = toDateKey(today);
+  const targetMs = Date.parse(`${targetKey}T00:00:00.000Z`);
+  const todayMs = Date.parse(`${todayKey}T00:00:00.000Z`);
+  if (Number.isNaN(targetMs) || Number.isNaN(todayMs)) return null;
+  return Math.floor((targetMs - todayMs) / (1000 * 60 * 60 * 24));
+};
+
+export const daysOverdue = (transaction: Transaction, today: Date | string = new Date()) => {
+  const rawDate = transaction.expectedDate || transaction.date;
+  if (!rawDate) return 0;
+  const expKey = toDateKey(rawDate);
+  const todayKey = toDateKey(today);
+  const expMs = Date.parse(`${expKey}T00:00:00.000Z`);
+  const todayMs = Date.parse(`${todayKey}T00:00:00.000Z`);
+  if (Number.isNaN(expMs) || Number.isNaN(todayMs)) return 0;
+  const diffDays = Math.floor((todayMs - expMs) / (1000 * 60 * 60 * 24));
+  return diffDays > 0 ? diffDays : 0;
+};
+
+export const selectOverduePendingCount = (transactions: Transaction[], today: Date | string = new Date()) => {
+  return selectPendingPayments(transactions).filter((tx) => daysOverdue(tx, today) > 0).length;
+};
+
 export const getOverviewStats = (transactions: Transaction[], clients: Client[], subscriptions: Subscription[]) => {
   const totalRevenue = getTotalRevenue(transactions);
   const totalExpenses = getTotalExpenses(transactions);
@@ -91,5 +141,7 @@ export const getOverviewStats = (transactions: Transaction[], clients: Client[],
     subscriptionBurden: getSubscriptionBurden(subscriptions),
     totalClients: clients.filter((client) => !client.archivedAt).length,
     activeClients: clients.filter((client) => client.status === 'ACTIVE' && !client.archivedAt).length,
+    pendingTotal: selectPendingTotal(transactions),
+    pendingCount: selectPendingCount(transactions),
   };
 };

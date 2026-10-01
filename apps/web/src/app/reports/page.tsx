@@ -4,7 +4,7 @@ import Image from 'next/image';
 import { useEffect, useMemo, useState } from 'react';
 import { useFinancialStore } from '@/store/financialStore';
 import { loadReportAPI, downloadReportCsv, downloadReportXlsx, type ReportData } from '@/services/financialApi';
-import { makeCompactCurrencyFormatter, makeLongCurrencyFormatter } from '@/lib/currency';
+import { makeCompactCurrencyFormatter } from '@/lib/currency';
 import { formatDate } from '@/lib/format';
 import { useLocale } from '@/lib/i18n';
 import { useToast } from '@/components/ui/Toast';
@@ -70,8 +70,6 @@ export default function ReportsPage() {
 
   const money = useMemo(() => makeCompactCurrencyFormatter(currency, { maximumFractionDigits: 0 }, locale), [currency, locale]);
   const money2 = useMemo(() => makeCompactCurrencyFormatter(currency, { minimumFractionDigits: 2 }, locale), [currency, locale]);
-  // Report summary cards are spacious — use the full localized currency name.
-  const moneyLong = useMemo(() => makeLongCurrencyFormatter(currency, { maximumFractionDigits: 0 }, locale), [currency, locale]);
   const activePreset = useMemo(() => {
     if (from === startOfMonth()) return 'month';
     if (from === startOfQuarter()) return 'quarter';
@@ -234,8 +232,8 @@ export default function ReportsPage() {
                 return (
                   <div key={s.label}>
                     <div className="t-caption text-text-muted">{s.label}</div>
-                    <div className={`t-h3 tnum ${s.tone === 'positive' ? 'text-positive' : s.tone === 'negative' ? 'text-negative' : ''}`}>
-                      {isNumericInt ? s.value : moneyLong.format(s.value)}
+                    <div className={`t-h3 tnum ${s.tone === 'positive' ? 'text-positive-text' : s.tone === 'negative' ? 'text-negative-text' : ''}`}>
+                      {isNumericInt ? s.value : money.format(s.value)}
                     </div>
                   </div>
                 );
@@ -268,7 +266,7 @@ export default function ReportsPage() {
                         const isNeg = col.numeric && typeof cell === 'number' && cell < 0;
                         const isPos = col.numeric && typeof cell === 'number' && cell > 0 && (col.key === 'revenue' || col.key === 'amount' || col.key === 'net');
                         return (
-                          <td key={j} className={`px-5 py-2.5 t-body ${col.numeric ? (dir === 'rtl' ? 'text-left tnum' : 'text-right tnum') : ''} ${isNeg ? 'text-negative' : isPos ? 'text-positive' : ''}`}>
+                          <td key={j} className={`px-5 py-2.5 t-body ${col.numeric ? (dir === 'rtl' ? 'text-left tnum' : 'text-right tnum') : ''} ${isNeg ? 'text-negative-text' : isPos ? 'text-positive-text' : ''}`}>
                             {fmtCell(cell, col.numeric)}
                           </td>
                         );

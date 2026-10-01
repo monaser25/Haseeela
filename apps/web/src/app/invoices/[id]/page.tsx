@@ -108,7 +108,7 @@ export default function InvoiceDetailPage() {
             <Badge tone={statusTone(invoice.status)} className="self-start">{STATUS_LABELS[invoice.status as InvoiceStatus] || (invoice.status[0] + invoice.status.slice(1).toLowerCase())}</Badge>
             <div className="flex justify-between t-small"><span className="text-text-muted">{t('invoices.detail.issuedLabel')}</span><span className="tnum date-token">{fmtDate(invoice.issueDate, locale)}</span></div>
             <div className="flex justify-between t-small"><span className="text-text-muted">{t('invoices.detail.dueLabel')}</span><span className="tnum date-token">{fmtDate(invoice.dueDate, locale)}</span></div>
-            {invoice.paidAt && <div className="flex justify-between t-small"><span className="text-text-muted">{t('invoices.detail.paidLabel')}</span><span className="tnum text-positive date-token">{fmtDate(invoice.paidAt, locale)}</span></div>}
+            {invoice.paidAt && <div className="flex justify-between t-small"><span className="text-text-muted">{t('invoices.detail.paidLabel')}</span><span className="tnum text-positive-text date-token">{fmtDate(invoice.paidAt, locale)}</span></div>}
             {invoice.client && <div className="flex justify-between t-small"><span className="text-text-muted">{t('invoices.detail.clientLabel')}</span><span dir="ltr">{invoice.client.name}</span></div>}
           </Card>
 
@@ -127,7 +127,7 @@ export default function InvoiceDetailPage() {
               <Button variant="secondary" icon="pencil" className="w-full" onClick={() => router.push(`/invoices/${invoice.id}/edit`)}>{t('invoices.detail.edit')}</Button>
             )}
             <Button variant="secondary" icon="download" className="w-full" onClick={() => window.print()}>{t('invoices.detail.download')}</Button>
-            <Button variant="ghost" icon="trash2" className="w-full text-negative" onClick={() => setConfirmDel(true)}>{t('invoices.detail.delete')}</Button>
+            <Button variant="ghost" icon="trash2" className="w-full text-negative-text" onClick={() => setConfirmDel(true)}>{t('invoices.detail.delete')}</Button>
           </Card>
         </div>
       </div>

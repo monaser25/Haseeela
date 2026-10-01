@@ -50,12 +50,17 @@ const ensureGeneratedTransaction = async (
     categoryId: string;
     clientId?: string;
     subscriptionId?: string;
+    status?: 'COMPLETED' | 'PENDING';
+    expectedDate?: Date;
   },
 ) => {
   const existing = await tx.transaction.findFirst({
     where: generatedTransactionWhere(params.userId, params.sourceType, params.sourceId, params.sourceBillingDate),
   });
   if (existing) return existing;
+
+  const status = params.status || 'COMPLETED';
+  const expectedDate = params.expectedDate ?? (status === 'PENDING' ? params.sourceBillingDate : undefined);
 
   try {
     return await tx.transaction.create({
@@ -65,8 +70,9 @@ const ensureGeneratedTransaction = async (
         name: params.name,
         amount: params.amount,
         type: params.type,
-        status: 'COMPLETED',
+        status,
         date: params.sourceBillingDate,
+        expectedDate,
         notes: params.name,
         sourceType: params.sourceType,
         sourceId: params.sourceId,
@@ -186,6 +192,8 @@ export const runDueRecurringPaymentsInTransaction = async (
         type: 'INCOME',
         categoryId: 'CLIENT',
         clientId: client.id,
+        status: 'PENDING',
+        expectedDate: nextBillingDate,
       });
       nextBillingDate = advanceBillingDate(nextBillingDate, 'MONTHLY');
     }
@@ -215,4 +223,139 @@ export const runDueRecurringPaymentsInTransaction = async (
 
 export const runDueRecurringPayments = async (userId: string, today: Date | string = new Date()) => {
   return prisma.$transaction((tx) => runDueRecurringPaymentsInTransaction(tx, userId, today));
+};
+
+export const createPendingPayment = async (
+  tx: Prisma.TransactionClient,
+  userId: string,
+  input: { clientId: string; amount: number; expectedDate: Date | string; note?: string },
+) => {
+  const client = await tx.client.findFirst({ where: { id: input.clientId, userId, archivedAt: null } });
+  if (!client) throw new HttpError(404, 'Client not found');
+  if (!input.amount || input.amount <= 0) throw new HttpError(400, 'Amount must be greater than 0');
+
+  const expectedDate = toDate(input.expectedDate) || new Date();
+
+  return tx.transaction.create({
+    data: {
+      userId,
+      name: `${client.name} payment`,
+      amount: input.amount,
+      type: 'INCOME',
+      status: 'PENDING',
+      categoryId: 'CLIENT',
+      clientId: client.id,
+      sourceType: 'manual',
+      date: expectedDate,
+      expectedDate,
+      notes: input.note,
+    },
+  });
+};
+
+export const updatePendingPayment = async (
+  tx: Prisma.TransactionClient,
+  userId: string,
+  id: string,
+  input: { amount?: number; expectedDate?: Date | string; note?: string },
+) => {
+  const existing = await tx.transaction.findFirst({ where: { id, userId, deletedAt: null } });
+  if (!existing) throw new HttpError(404, 'Transaction not found');
+  if (existing.status !== 'PENDING') throw new HttpError(409, 'Only pending payments can be updated');
+
+  if (input.amount !== undefined && input.amount <= 0) {
+    throw new HttpError(400, 'Amount must be greater than 0');
+  }
+
+  const expectedDate = input.expectedDate !== undefined ? toDate(input.expectedDate) : undefined;
+  const data: Prisma.TransactionUpdateInput = {};
+  if (input.amount !== undefined) data.amount = input.amount;
+  if (expectedDate !== undefined) {
+    data.expectedDate = expectedDate;
+    data.date = expectedDate;
+  }
+  if (input.note !== undefined) data.notes = input.note;
+
+  try {
+    return await tx.transaction.update({
+      where: { id },
+      data,
+    });
+  } catch (err) {
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
+      throw new HttpError(409, 'A transaction already exists for that date');
+    }
+    throw err;
+  }
+};
+
+export const deletePendingPayment = async (
+  tx: Prisma.TransactionClient,
+  userId: string,
+  id: string,
+) => {
+  const existing = await tx.transaction.findFirst({ where: { id, userId, deletedAt: null } });
+  if (!existing) throw new HttpError(404, 'Transaction not found');
+  if (existing.status !== 'PENDING') throw new HttpError(409, 'Only pending payments can be deleted');
+
+  await tx.transaction.delete({ where: { id } });
+  return { success: true };
+};
+
+export const completePendingPayment = async (
+  tx: Prisma.TransactionClient,
+  userId: string,
+  id: string,
+  completedDate?: Date | string,
+) => {
+  const existing = await tx.transaction.findFirst({ where: { id, userId, deletedAt: null } });
+  if (!existing) throw new HttpError(404, 'Transaction not found');
+  if (existing.status !== 'PENDING') throw new HttpError(409, 'Payment is not pending');
+
+  const resolvedCompletedDate = toDate(completedDate) || new Date();
+
+  try {
+    return await tx.transaction.update({
+      where: { id },
+      data: {
+        status: 'COMPLETED',
+        date: resolvedCompletedDate,
+        completedAt: new Date(),
+      },
+    });
+  } catch (err) {
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
+      throw new HttpError(409, 'A transaction already exists for that date');
+    }
+    throw err;
+  }
+};
+
+export const revertPendingPayment = async (
+  tx: Prisma.TransactionClient,
+  userId: string,
+  id: string,
+) => {
+  const existing = await tx.transaction.findFirst({ where: { id, userId, deletedAt: null } });
+  if (!existing) throw new HttpError(404, 'Transaction not found');
+  if (existing.status !== 'COMPLETED') throw new HttpError(409, 'Only completed transactions can be reverted');
+  if (!existing.expectedDate) {
+    throw new HttpError(400, 'This transaction was not created from a pending payment');
+  }
+
+  try {
+    return await tx.transaction.update({
+      where: { id },
+      data: {
+        status: 'PENDING',
+        date: existing.expectedDate,
+        completedAt: null,
+      },
+    });
+  } catch (err) {
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
+      throw new HttpError(409, 'A transaction already exists for that date');
+    }
+    throw err;
+  }
 };

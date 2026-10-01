@@ -29,9 +29,9 @@ export function Badge({ className, tone = 'neutral', icon, children, ...props }:
   const tones = {
     neutral:  "bg-surface-hover text-text-secondary",
     accent:   "bg-accent-tint text-accent",
-    positive: "bg-positive-tint text-positive",
-    negative: "bg-negative-tint text-negative",
-    warning:  "bg-warning-tint text-warning",
+    positive: "bg-positive-tint text-positive-text",
+    negative: "bg-negative-tint text-negative-text",
+    warning:  "bg-warning-tint text-warning-text",
     info:     "bg-info-tint text-info",
   };
 
@@ -76,21 +76,23 @@ export function FilterChip({ className, active, onClick, children, count, ...pro
 
 export interface DeltaChipProps extends React.HTMLAttributes<HTMLSpanElement> {
   value: number;
+  inverse?: boolean;
 }
 
-export function DeltaChip({ value, className, ...props }: DeltaChipProps) {
-  const isPositive = value >= 0;
+export function DeltaChip({ value, inverse = false, className, ...props }: DeltaChipProps) {
+  const isUp = value >= 0;
+  const isGood = inverse ? value <= 0 : value >= 0;
   
   return (
     <span 
       className={cn(
         "inline-flex items-center gap-1 text-xs font-semibold tnum",
-        isPositive ? "text-positive" : "text-negative",
+        isGood ? "text-positive-text" : "text-negative-text",
         className
       )}
       {...props}
     >
-      <Icon name={isPositive ? "arrowUp" : "arrowDown"} size={12} strokeWidth={2.5} />
+      <Icon name={isUp ? "arrowUp" : "arrowDown"} size={12} strokeWidth={2.5} />
       {Math.abs(value)}%
     </span>
   );

@@ -115,7 +115,7 @@ export default function VerifyEmailPage() {
   if (status === 'email-changed') {
     return (
       <AuthLayout>
-        <div className="w-[56px] h-[56px] rounded-full bg-positive-tint text-positive flex items-center justify-center mb-5">
+        <div className="w-[56px] h-[56px] rounded-full bg-positive-tint text-positive-text flex items-center justify-center mb-5">
           <Icon name="checkCircle" size={26} />
         </div>
         <AuthHeader title={t('auth.verify.email_updated.title')} sub={t('auth.verify.email_updated.subtitle')} />
@@ -129,7 +129,7 @@ export default function VerifyEmailPage() {
   if (status === 'success') {
     return (
       <AuthLayout>
-        <div className="w-[56px] h-[56px] rounded-full bg-positive-tint text-positive flex items-center justify-center mb-5">
+        <div className="w-[56px] h-[56px] rounded-full bg-positive-tint text-positive-text flex items-center justify-center mb-5">
           <Icon name="checkCircle" size={26} />
         </div>
         <AuthHeader title={t('auth.verify.success.title')} sub={t('auth.verify.success.subtitle')} />
@@ -142,7 +142,7 @@ export default function VerifyEmailPage() {
 
   return (
     <AuthLayout>
-      <div className="w-[56px] h-[56px] rounded-full bg-warning-tint text-warning flex items-center justify-center mb-5">
+      <div className="w-[56px] h-[56px] rounded-full bg-warning-tint text-warning-text flex items-center justify-center mb-5">
         <Icon name="alertTriangle" size={26} />
       </div>
       <AuthHeader

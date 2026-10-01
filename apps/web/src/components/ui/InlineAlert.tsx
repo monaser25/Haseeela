@@ -16,9 +16,9 @@ export interface InlineAlertProps extends Omit<React.HTMLAttributes<HTMLDivEleme
 
 export function InlineAlert({ className, title, body, tone = 'info', icon, children, ...props }: InlineAlertProps) {
   const tones = {
-    positive: { bg: "bg-positive-tint", border: "border-positive-border", icon: "checkCircle", iconColor: "text-positive" },
-    negative: { bg: "bg-negative-tint", border: "border-negative-border", icon: "alertCircle", iconColor: "text-negative" },
-    warning: { bg: "bg-warning-tint", border: "border-warning-border", icon: "alertTriangle", iconColor: "text-warning" },
+    positive: { bg: "bg-positive-tint", border: "border-positive-border", icon: "checkCircle", iconColor: "text-positive-text" },
+    negative: { bg: "bg-negative-tint", border: "border-negative-border", icon: "alertCircle", iconColor: "text-negative-text" },
+    warning: { bg: "bg-warning-tint", border: "border-warning-border", icon: "alertTriangle", iconColor: "text-warning-text" },
     info: { bg: "bg-info-tint", border: "border-info-border", icon: "info", iconColor: "text-info" },
   };
 

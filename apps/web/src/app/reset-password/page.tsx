@@ -181,7 +181,7 @@ export default function ResetPasswordPage() {
   if (status === 'invalid') {
     return (
       <AuthLayout>
-        <div className="w-[56px] h-[56px] rounded-full bg-negative-tint text-negative flex items-center justify-center mb-5">
+        <div className="w-[56px] h-[56px] rounded-full bg-negative-tint text-negative-text flex items-center justify-center mb-5">
           <Icon name="alertTriangle" size={26} />
         </div>
         <AuthHeader title={t('auth.resetPassword.invalidTitle')} sub={t('auth.resetPassword.invalidSubtitle')} />
@@ -198,7 +198,7 @@ export default function ResetPasswordPage() {
   if (status === 'done') {
     return (
       <AuthLayout>
-        <div className="w-[56px] h-[56px] rounded-full bg-positive-tint text-positive flex items-center justify-center mb-5">
+        <div className="w-[56px] h-[56px] rounded-full bg-positive-tint text-positive-text flex items-center justify-center mb-5">
           <Icon name="checkCircle" size={26} />
         </div>
         <AuthHeader title={t('auth.resetPassword.doneTitle')} sub={t('auth.resetPassword.doneSubtitle')} />

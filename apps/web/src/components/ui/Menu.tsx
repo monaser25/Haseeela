@@ -75,7 +75,7 @@ export function Menu({ trigger, items, align = 'right', width = 200, side = 'bot
                 className={cn(
                   'flex items-center gap-2.5 w-full px-2.5 h-9 rounded-sm text-start text-sm transition-colors focus-ring disabled:opacity-50 disabled:cursor-not-allowed',
                   item.danger
-                    ? 'text-negative hover:bg-negative-tint'
+                    ? 'text-negative-text hover:bg-negative-tint'
                     : 'text-text-secondary hover:bg-surface-hover hover:text-text',
                 )}
               >

@@ -91,6 +91,8 @@ model Transaction {
   type       String   // "INCOME" or "EXPENSE"
   status     String   @default("COMPLETED") // COMPLETED, PENDING
   date       DateTime
+  expectedDate DateTime?
+  completedAt  DateTime?
   notes      String?
   sourceType String   // manual, client, subscription
   sourceId   String?
@@ -114,7 +116,8 @@ model Transaction {
   @@index([clientId])
   @@index([subscriptionId])
   @@index([sourceBillingDate])
-  @@unique([userId, sourceType, sourceId, date])
+  @@index([userId, status])
+  @@unique([userId, sourceType, sourceId, sourceBillingDate])
 }
 
 model Category {

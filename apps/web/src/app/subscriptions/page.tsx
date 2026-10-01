@@ -4,9 +4,10 @@ import { useEffect, useMemo, useState } from 'react';
 import { computeNextBillingDate } from '@/store/financialStore';
 import { useFinancialStore } from '@/store/useFinancialStore';
 import { Subscription } from '@/types/finance';
-import { makeCompactCurrencyFormatter, makeLongCurrencyFormatter } from '@/lib/currency';
+import { makeCompactCurrencyFormatter } from '@/lib/currency';
 import { formatDate } from '@/lib/format';
 import { useLocale } from '@/lib/i18n';
+import { daysUntilDate } from '@/selectors/financialSelectors';
 import { latinTokenClass } from '@/lib/textDirection';
 import { Badge, Button, Card, EmptyState, Field, Icon, IconButton, InlineAlert, Input, SectionHeader, Select, StatCard } from '@/components/ui';
 
@@ -27,6 +28,38 @@ const monthlyEquivalent = (subscription: Subscription) => {
   return subscription.amount;
 };
 
+function getSubscriptionUrgencyBadge(
+  sub: Subscription,
+  t: (key: any, vars?: any) => any,
+) {
+  if (sub.status !== 'ACTIVE' || sub.archivedAt || !sub.nextBillingDate) {
+    return null;
+  }
+
+  const diff = daysUntilDate(sub.nextBillingDate);
+  if (diff === null || diff > 14) {
+    return null;
+  }
+
+  if (diff < 0) {
+    return <Badge tone="negative">{t('subscriptions.badge.overdue')}</Badge>;
+  }
+
+  if (diff === 0) {
+    return <Badge tone="warning">{t('subscriptions.badge.dueToday')}</Badge>;
+  }
+
+  const daysElement = <span dir="ltr">{diff}</span>;
+  const label =
+    diff === 1
+      ? t('subscriptions.badge.dueIn', { days: daysElement })
+      : t('subscriptions.badge.dueInPlural', { days: daysElement });
+
+  const tone = diff <= 3 ? 'warning' : 'neutral';
+
+  return <Badge tone={tone}>{label}</Badge>;
+}
+
 export default function SubscriptionsPage() {
   const { subscriptions, transactions, currency, isInitialized, addSubscription, updateSubscription, deleteSubscription, recordSubscriptionPayment } = useFinancialStore();
   const { t, locale } = useLocale();
@@ -40,7 +73,6 @@ export default function SubscriptionsPage() {
   const [recordingId, setRecordingId] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const money = useMemo(() => makeCompactCurrencyFormatter(currency, undefined, locale), [currency, locale]);
-  const moneyLong = useMemo(() => makeLongCurrencyFormatter(currency, undefined, locale), [currency, locale]);
   const currencyPrefix = useMemo(() => money.formatToParts(0).find((part) => part.type === 'currency')?.value || currency, [currency, money]);
 
   useEffect(() => {
@@ -150,14 +182,26 @@ export default function SubscriptionsPage() {
           <Button icon="Plus" onClick={() => { setModalError(null); setModal({ mode: 'add' }); }} className="w-full sm:w-auto">{t('subscriptions.addSubscription')}</Button>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatCard label={t('subscriptions.stats.active')} value={subscriptionStats.active} icon="CreditCard" />
-          <StatCard label={t('subscriptions.stats.monthlyCost')} value={money.format(subscriptionStats.monthlyCost)} tone="negative" icon="Receipt" />
-          <StatCard label={t('subscriptions.stats.yearlyRunRate')} value={money.format(subscriptionStats.yearlyRunRate)} tone="negative" icon="TrendingDown" />
-          <StatCard label={t('subscriptions.stats.archived')} value={subscriptionStats.archived} icon="Archive" />
+        <div className="border-y border-border py-3 grid grid-cols-2 sm:grid-cols-4 divide-x divide-border">
+          <div className="px-3 sm:px-4">
+            <span className="t-caption text-text-muted">{t('subscriptions.stats.active')}</span>
+            <div className="t-h3 tnum text-text mt-0.5" dir="ltr">{subscriptionStats.active}</div>
+          </div>
+          <div className="px-3 sm:px-4">
+            <span className="t-caption text-text-muted">{t('subscriptions.stats.monthlyCost')}</span>
+            <div className="t-h3 tnum text-negative-text mt-0.5" dir="ltr">{money.format(subscriptionStats.monthlyCost)}</div>
+          </div>
+          <div className="px-3 sm:px-4">
+            <span className="t-caption text-text-muted">{t('subscriptions.stats.yearlyRunRate')}</span>
+            <div className="t-h3 tnum text-negative-text mt-0.5" dir="ltr">{money.format(subscriptionStats.yearlyRunRate)}</div>
+          </div>
+          <div className="px-3 sm:px-4">
+            <span className="t-caption text-text-muted">{t('subscriptions.stats.archived')}</span>
+            <div className="t-h3 tnum text-text-muted mt-0.5" dir="ltr">{subscriptionStats.archived}</div>
+          </div>
         </div>
 
-        <Card pad={0} className="overflow-hidden">
+        <Card tier="raised" pad={0} className="overflow-hidden">
           <div className="p-4 sm:p-5 border-b border-border flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center">
             <SectionHeader
               title={t('subscriptions.stack.title')}
@@ -178,7 +222,7 @@ export default function SubscriptionsPage() {
               {visibleSubscriptions.map((sub) => (
                 <div key={sub.id} className="p-4 flex flex-col gap-4 hover:bg-surface-hover transition-colors sm:flex-row sm:items-center sm:justify-between">
                   <div className="flex items-start gap-3 sm:items-center">
-                    <div className="w-10 h-10 rounded-lg bg-negative-tint text-negative flex items-center justify-center shrink-0">
+                    <div className="w-10 h-10 rounded-lg bg-negative-tint text-negative-text flex items-center justify-center shrink-0">
                       <Icon name="CreditCard" size={18} />
                     </div>
                     <div className="min-w-0">
@@ -188,20 +232,23 @@ export default function SubscriptionsPage() {
                         <Badge tone="accent">{t(`subscriptions.cycle.${(sub.billingCycle || sub.cycle).toLowerCase()}` as any)}</Badge>
                         {sub.archivedAt && <Badge>{t('subscriptions.badges.archived')}</Badge>}
                       </div>
-                      <div className="text-sm text-text-muted mt-1">
-                        {t('subscriptions.list.next', { date: <span className="date-token">{formatDate(sub.nextBillingDate, locale)}</span> })}
-                        {sub.notes ? ` - ${sub.notes}` : ''}
+                      <div className="text-sm text-text-muted mt-1 flex flex-wrap items-center gap-2">
+                        <span>
+                          {t('subscriptions.list.next', { date: <span className="date-token">{formatDate(sub.nextBillingDate, locale)}</span> })}
+                        </span>
+                        {getSubscriptionUrgencyBadge(sub, t)}
+                        {sub.notes ? <span> - {sub.notes}</span> : null}
                       </div>
                     </div>
                   </div>
                   <div className="flex items-center justify-between gap-3 sm:justify-end">
                     <div className="text-left sm:text-right">
-                      <div className="text-sm font-mono font-semibold text-negative" dir="ltr">{t('subscriptions.list.perMonth', { amount: money.format(monthlyEquivalent(sub)) })}</div>
+                      <div className="text-sm font-mono font-semibold text-negative-text" dir="ltr">{t('subscriptions.list.perMonth', { amount: money.format(monthlyEquivalent(sub)) })}</div>
                       <div className="text-xs text-text-muted">{t('subscriptions.list.billed', { amount: <span dir="ltr">{money.format(sub.amount)}</span> })}</div>
                     </div>
                     <div className="flex items-center gap-2">
                       {sub.status === 'ACTIVE' && !sub.archivedAt && (
-                        <IconButton icon="DollarSign" size="sm" disabled={recordingId === sub.id} onClick={() => recordPayment(sub)} title={t('subscriptions.actions.recordPayment', { name: sub.name })} className="text-positive hover:text-positive" />
+                        <IconButton icon="DollarSign" size="sm" disabled={recordingId === sub.id} onClick={() => recordPayment(sub)} title={t('subscriptions.actions.recordPayment', { name: sub.name })} className="text-positive-text hover:text-positive-text" />
                       )}
                       <IconButton icon="Pencil" size="sm" onClick={() => { setModalError(null); setModal({ mode: 'edit', subscription: sub }); }} title={t('subscriptions.actions.edit', { name: sub.name })} />
                       <Button type="button" variant="secondary" size="sm" icon="Archive" onClick={() => requestDelete(sub)}>
@@ -217,7 +264,7 @@ export default function SubscriptionsPage() {
 
         <Card pad={20} className="max-w-md">
           <div className="t-caption text-text-muted">{t('subscriptions.cost.title')}</div>
-          <div className="t-display text-negative mt-1">{moneyLong.format(totalMonthlyCost)}</div>
+          <div className="t-display text-negative-text mt-1">{money.format(totalMonthlyCost)}</div>
           <p className="text-sm text-text-muted mt-1">{t('subscriptions.cost.desc')}</p>
         </Card>
       </div>

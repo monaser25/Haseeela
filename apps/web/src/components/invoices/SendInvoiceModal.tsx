@@ -128,7 +128,7 @@ export function SendInvoiceModal({
     return (
       <Modal open={open} onClose={onClose} title={t('invoices.send.successTitle')} maxWidth={460}>
         <div className="flex flex-col items-center text-center gap-3 py-2">
-          <div className="w-12 h-12 rounded-full bg-positive-tint text-positive flex items-center justify-center">
+          <div className="w-12 h-12 rounded-full bg-positive-tint text-positive-text flex items-center justify-center">
             <Icon name="checkCircle" size={24} />
           </div>
           <p className="t-body text-text-secondary">

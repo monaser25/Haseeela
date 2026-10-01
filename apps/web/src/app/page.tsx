@@ -4,8 +4,8 @@ import dynamic from 'next/dynamic';
 import { useFinancialStore } from '@/store/financialStore';
 import { Client, Subscription, Transaction } from '@/types/finance';
 import { computeNextBillingDate } from '@/store/financialStore';
-import { getOverviewStats } from '@/selectors/financialSelectors';
-import { makeCompactCurrencyFormatter, makeLongCurrencyFormatter } from '@/lib/currency';
+import { getOverviewStats, selectOverduePendingCount } from '@/selectors/financialSelectors';
+import { makeCompactCurrencyFormatter } from '@/lib/currency';
 import { formatDate } from '@/lib/format';
 import { useLocale, translateError } from '@/lib/i18n';
 import { formatTransactionName } from '@/lib/format';
@@ -77,11 +77,10 @@ export default function DashboardPage() {
   const [isSaving, setIsSaving] = useState(false);
   
   const overview = useMemo(() => getOverviewStats(transactions, clients, subscriptions), [transactions, clients, subscriptions]);
+  const overduePendingCount = useMemo(() => selectOverduePendingCount(transactions), [transactions]);
   
   const money0 = useMemo(() => makeCompactCurrencyFormatter(currency, { maximumFractionDigits: 0 }, locale), [currency, locale]);
   const money2 = useMemo(() => makeCompactCurrencyFormatter(currency, { minimumFractionDigits: 2 }, locale), [currency, locale]);
-  // Spacious overview cards use the full localized currency name (e.g. "دولار أمريكي").
-  const moneyLong0 = useMemo(() => makeLongCurrencyFormatter(currency, { maximumFractionDigits: 0 }, locale), [currency, locale]);
   const currencyPrefix = useMemo(() => money2.formatToParts(0).find((part) => part.type === 'currency')?.value || currency, [currency, money2]);
 
   useEffect(() => {
@@ -261,7 +260,7 @@ export default function DashboardPage() {
         <div className="flex flex-col gap-2 items-start">
         <p>{translateError(error, t)}</p>
         <button 
-              className="text-sm font-semibold underline text-warning-strong hover:text-warning"
+              className="text-sm font-semibold underline text-warning-text hover:opacity-80"
               onClick={() => {
                 if ('serviceWorker' in navigator) {
                   navigator.serviceWorker.getRegistrations().then(function(registrations) {
@@ -290,32 +289,52 @@ export default function DashboardPage() {
       </div>
 
       {/* Stat Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-        <StatCard 
-          label={t('dashboard.stats.totalClients')} 
-          value={overview.totalClients} 
-          icon="Users" 
-          onClick={() => router.push('/clients')} 
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+        <StatCard
+          tier="raised"
+          className="col-span-1 sm:col-span-2"
+          label={t('dashboard.stats.netProfit')}
+          value={<span className="text-[28px] sm:text-[32px]">{money0.format(overview.netProfit)}</span>}
+          tone={overview.netProfit >= 0 ? 'positive' : 'negative'}
+          icon="Wallet"
+          onClick={() => router.push('/analytics')}
         />
         <StatCard
           label={t('dashboard.stats.totalRevenue')}
-          value={moneyLong0.format(overview.totalRevenue)}
+          value={money0.format(overview.totalRevenue)}
           tone="positive"
           icon="TrendingUp"
           onClick={() => router.push('/transactions?filter=revenue')}
         />
         <StatCard
+          label={t('pending.kpi.title')}
+          value={<span dir="ltr">{money0.format(overview.pendingTotal)}</span>}
+          tone="warning"
+          icon="Clock"
+          onClick={() => router.push('/clients#pending')}
+          sub={
+            overduePendingCount > 0 ? (
+              <span className="flex items-center gap-1 flex-wrap">
+                <span>{overview.pendingCount === 1 ? t('pending.kpi.sub', { count: String(overview.pendingCount) }) : t('pending.kpi.subPlural', { count: String(overview.pendingCount) })}</span>
+                <span className="text-negative-text font-medium">({overduePendingCount === 1 ? t('pending.kpi.overdue', { count: String(overduePendingCount) }) : t('pending.kpi.overduePlural', { count: String(overduePendingCount) })})</span>
+              </span>
+            ) : (
+              overview.pendingCount === 1 ? t('pending.kpi.sub', { count: String(overview.pendingCount) }) : t('pending.kpi.subPlural', { count: String(overview.pendingCount) })
+            )
+          }
+        />
+        <StatCard
           label={t('dashboard.stats.totalExpenses')}
-          value={moneyLong0.format(overview.totalExpenses)}
+          value={money0.format(overview.totalExpenses)}
           tone="negative"
           icon="Receipt"
           onClick={() => router.push('/transactions?filter=expenses')}
         />
-        <StatCard
-          label={t('dashboard.stats.netProfit')}
-          value={moneyLong0.format(overview.netProfit)}
-          icon="Wallet"
-          onClick={() => router.push('/analytics')}
+        <StatCard 
+          label={t('dashboard.stats.totalClients')} 
+          value={overview.totalClients} 
+          icon="Users" 
+          onClick={() => router.push('/clients')} 
         />
         <StatCard 
           label={t('dashboard.stats.activeSubscriptions')} 
@@ -377,7 +396,7 @@ export default function DashboardPage() {
               </div>
               <div className="mt-4 pt-3.5 border-t border-border flex justify-between items-baseline">
                 <span className="text-sm text-text-muted">{t('dashboard.topClient.totalPaid')}</span>
-                <span className="t-h3 font-mono text-positive" dir="ltr">{money0.format(topClient.value)}</span>
+                <span className="t-h3 font-mono text-positive-text" dir="ltr">{money0.format(topClient.value)}</span>
               </div>
             </Card>
           )}
@@ -424,7 +443,7 @@ export default function DashboardPage() {
                   >
                     <td className="px-5 py-3">
                       <div className="flex items-center gap-3">
-                        <div className={`w-8 h-8 rounded-lg shrink-0 flex items-center justify-center ${tx.type === 'INCOME' ? 'bg-positive-tint text-positive' : 'bg-negative-tint text-negative'}`}>
+                        <div className={`w-8 h-8 rounded-lg shrink-0 flex items-center justify-center ${tx.type === 'INCOME' ? 'bg-positive-tint text-positive-text' : 'bg-negative-tint text-negative-text'}`}>
                           <Icon name={tx.type === 'INCOME' ? 'ArrowDown' : 'ArrowUp'} size={15} strokeWidth={2.2} />
                         </div>
                         <div>
@@ -434,7 +453,7 @@ export default function DashboardPage() {
                       </div>
                     </td>
                     <td className="px-5 py-3 text-right">
-                      <span className={`t-body-m font-mono ${tx.type === 'INCOME' ? 'text-positive' : 'text-negative'}`} dir="ltr">
+                      <span className={`t-body-m font-mono ${tx.type === 'INCOME' ? 'text-positive-text' : 'text-negative-text'}`} dir="ltr">
                         {tx.type === 'INCOME' ? '+' : '−'}{money2.format(tx.amount)}
                       </span>
                     </td>
@@ -497,7 +516,7 @@ function DashboardTransactionForm({ type, currencyPrefix, error, isSaving, onCan
       <div>
         <h2 id="dashboard-modal-title" className="t-h3">{type === 'INCOME' ? t('dashboard.forms.income.title') : t('dashboard.forms.expense.title')}</h2>
         <p className="text-sm text-text-muted mt-1">{type === 'INCOME' ? t('dashboard.forms.income.subtitle') : t('dashboard.forms.expense.subtitle')}</p>
-        {error && <p className="text-sm text-negative mt-2">{error}</p>}
+        {error && <p className="text-sm text-negative-text mt-2">{error}</p>}
       </div>
       <Field label={t('dashboard.forms.tx.nameLabel')}>
         <Input name="name" placeholder={type === 'INCOME' ? t('dashboard.forms.tx.nameIncomePlaceholder') : t('dashboard.forms.tx.nameExpensePlaceholder')} required autoFocus />
@@ -548,7 +567,7 @@ function DashboardClientForm({ currencyPrefix, error, isSaving, onCancel, onSave
       <div>
         <h2 id="dashboard-modal-title" className="t-h3">{t('dashboard.forms.client.title')}</h2>
         <p className="text-sm text-text-muted mt-1">{t('dashboard.forms.client.subtitle')}</p>
-        {error && <p className="text-sm text-negative mt-2">{error}</p>}
+        {error && <p className="text-sm text-negative-text mt-2">{error}</p>}
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <Field label={t('dashboard.forms.client.nameLabel')}>
@@ -604,7 +623,7 @@ function DashboardSubscriptionForm({ currencyPrefix, error, isSaving, onCancel, 
       <div>
         <h2 id="dashboard-modal-title" className="t-h3">{t('dashboard.forms.sub.title')}</h2>
         <p className="text-sm text-text-muted mt-1">{t('dashboard.forms.sub.subtitle')}</p>
-        {error && <p className="text-sm text-negative mt-2">{error}</p>}
+        {error && <p className="text-sm text-negative-text mt-2">{error}</p>}
       </div>
       <Field label={t('dashboard.forms.sub.nameLabel')}>
         <Input name="name" placeholder={t('dashboard.forms.sub.namePlaceholder')} required autoFocus />
