@@ -11,11 +11,11 @@ export const POST = async (request: Request, { params }: { params: { id: string 
     const user = await authenticateRequest(request);
     const userId = getUserId(user);
 
-    const invoice = await prisma.invoice.findFirst({ where: { id: params.id, userId } });
-    if (!invoice) throw new HttpError(404, 'Invoice not found');
-    if (invoice.status === 'PAID') {
+    const existing = await prisma.invoice.findFirst({ where: { id: params.id, userId } });
+    if (!existing) throw new HttpError(404, 'Invoice not found');
+    if (existing.status === 'PAID') {
       const full = await prisma.invoice.findUnique({
-        where: { id: invoice.id },
+        where: { id: existing.id },
         include: { lineItems: { orderBy: { position: 'asc' } }, client: { select: { id: true, name: true, company: true, email: true } } },
       });
       return NextResponse.json({ invoice: full, transaction: null });
@@ -23,47 +23,88 @@ export const POST = async (request: Request, { params }: { params: { id: string 
 
     const paidAt = new Date();
 
-    const result = await prisma.$transaction(async (tx) => {
+    const claimResult = await prisma.$transaction(async (tx) => {
+      // Conditional claim: update status to PAID only if it is not already PAID
+      const claimed = await tx.invoice.updateMany({
+        where: {
+          id: params.id,
+          userId,
+          status: { not: 'PAID' },
+        },
+        data: {
+          status: 'PAID',
+          paidAt,
+        },
+      });
+
+      if (claimed.count === 0) {
+        // Concurrency loser: another request already claimed payment
+        return { isWinner: false };
+      }
+
+      // Authoritative read under the protected transaction to ensure fresh total and client
+      const freshInvoice = await tx.invoice.findUniqueOrThrow({
+        where: { id: params.id },
+      });
+
       const transaction = await tx.transaction.create({
         data: {
-          name: `Payment — ${invoice.number}`,
-          amount: invoice.total,
+          name: `Payment — ${freshInvoice.number}`,
+          amount: freshInvoice.total,
           type: 'INCOME',
           status: 'COMPLETED',
           date: paidAt,
           notes: null,
           sourceType: 'invoice',
-          sourceId: invoice.id,
+          sourceId: freshInvoice.id,
           categoryId: 'CLIENT',
-          clientId: invoice.clientId,
+          clientId: freshInvoice.clientId,
           isAuto: true,
           userId,
         },
       });
 
-      const updated = await tx.invoice.update({
-        where: { id: invoice.id },
-        data: { status: 'PAID', paidAt, transactionId: transaction.id },
-        include: { lineItems: { orderBy: { position: 'asc' } }, client: { select: { id: true, name: true, company: true, email: true } } },
+      const updatedInvoice = await tx.invoice.update({
+        where: { id: freshInvoice.id },
+        data: { transactionId: transaction.id },
+        include: {
+          lineItems: { orderBy: { position: 'asc' } },
+          client: { select: { id: true, name: true, company: true, email: true } },
+        },
       });
 
-      return { invoice: updated, transaction };
+      return { isWinner: true, invoice: updatedInvoice, transaction };
     });
 
-    // Best-effort notification — created outside the transaction so a dedupe
-    // collision can never roll back the payment.
+    if (!claimResult.isWinner) {
+      // Re-read authoritative row and return idempotent result without income
+      const full = await prisma.invoice.findUnique({
+        where: { id: params.id },
+        include: {
+          lineItems: { orderBy: { position: 'asc' } },
+          client: { select: { id: true, name: true, company: true, email: true } },
+        },
+      });
+      return NextResponse.json({ invoice: full, transaction: null });
+    }
+
+    // Best-effort notification — only sent for the actual winning payment
     await prisma.notification
       .create({
         data: {
           type: 'PAYMENT_RECORDED',
-          title: `Payment recorded for ${invoice.number}`,
-          body: `Marked ${invoice.number} as paid.`,
+          title: `Payment recorded for ${claimResult.invoice!.number}`,
+          body: `Marked ${claimResult.invoice!.number} as paid.`,
           link: '/invoices',
-          refKey: `invoice-paid:${invoice.id}`,
+          refKey: `invoice-paid:${claimResult.invoice!.id}`,
           userId,
         },
       })
       .catch(() => undefined);
 
-    return NextResponse.json(result);
+    return NextResponse.json({
+      invoice: claimResult.invoice,
+      transaction: claimResult.transaction,
+    });
   });
+
