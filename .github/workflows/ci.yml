@@ -26,12 +26,12 @@ jobs:
           --health-retries 5
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
           cache: 'npm'
 
       - name: Check for merge-conflict markers
@@ -44,8 +44,20 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Lint
-        run: npm run lint -w apps/web --if-present
+      - name: Check Shared TypeScript
+        run: npx tsc --noEmit -p packages/shared
+
+      - name: Check i18n
+        run: npm run lint:i18n
+
+      # ---------------------------------------------------------
+      # Web Gates (FlowLedger)
+      # ---------------------------------------------------------
+      - name: Validate Prisma Schema
+        env:
+          DATABASE_URL: postgresql://postgres:password@localhost:5432/flowledger_test
+          DIRECT_URL: postgresql://postgres:password@localhost:5432/flowledger_test
+        run: npx prisma validate --schema=apps/web/prisma/schema.prisma
 
       - name: Generate Prisma Client
         env:
@@ -53,13 +65,19 @@ jobs:
           DIRECT_URL: postgresql://postgres:password@localhost:5432/flowledger_test
         run: npx prisma generate --schema=apps/web/prisma/schema.prisma
 
-      - name: Run Tests
+      - name: Typecheck Web
+        run: npx tsc --noEmit -p apps/web
+
+      - name: Lint Web
+        run: npm run lint -w apps/web
+
+      - name: Run Web Tests
         env:
           DATABASE_URL: postgresql://postgres:password@localhost:5432/flowledger_test
           DIRECT_URL: postgresql://postgres:password@localhost:5432/flowledger_test
         run: npm test -w apps/web
 
-      - name: Production Build
+      - name: Web Production Build
         env:
           DATABASE_URL: postgresql://postgres:password@localhost:5432/flowledger_test
           DIRECT_URL: postgresql://postgres:password@localhost:5432/flowledger_test
@@ -69,3 +87,32 @@ jobs:
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ci-anon-placeholder
           NEXT_PUBLIC_API_URL: ""
         run: npm run build -w apps/web
+
+      # ---------------------------------------------------------
+      # Mobile Gates (Haseela Mobile V1)
+      # ---------------------------------------------------------
+      - name: Typecheck Mobile
+        run: npx tsc --noEmit -p apps/mobile
+
+      - name: Lint Mobile
+        run: npm run lint -w apps/mobile
+
+      - name: Run Mobile Tests
+        run: npm test -w apps/mobile -- --runInBand
+
+      - name: Mobile Release Config Tests
+        run: node --test scripts/mobile-release-config.test.cjs
+
+      - name: Mobile Release Static Preflight Check
+        env:
+          EXPO_PUBLIC_SUPABASE_URL: https://example.supabase.co
+          EXPO_PUBLIC_SUPABASE_ANON_KEY: ci-anon-placeholder
+          EXPO_PUBLIC_API_URL: https://example.com
+        run: node scripts/check-mobile-release.cjs --static
+
+      - name: Export Mobile Android Bundle (CI check)
+        env:
+          EXPO_PUBLIC_SUPABASE_URL: https://example.supabase.co
+          EXPO_PUBLIC_SUPABASE_ANON_KEY: ci-anon-placeholder
+          EXPO_PUBLIC_API_URL: https://example.com
+        run: npm exec -w apps/mobile -- expo export --platform android --output-dir .export-ci-check

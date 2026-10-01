@@ -23,5 +23,24 @@ apps/web/public/workbox-*.js.map
 *.log
 .DS_Store
 Thumbs.db
+__pycache__/
+scripts/__pycache__/
 
 .vercel
+
+# Mobile build / export outputs
+.expo/
+apps/mobile/.expo/
+.export-*/
+apps/mobile/.export-*/
+*.apk
+*.aab
+*.ipa
+
+# Mobile native credentials & signing
+credentials.json
+google-services.json
+GoogleService-Info.plist
+*.keystore
+*.jks
+
