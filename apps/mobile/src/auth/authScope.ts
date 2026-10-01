@@ -52,3 +52,15 @@ export function resetAuthScope(): void {
   currentAuthUserId = undefined;
   currentSessionEpoch += 1;
 }
+
+let authOpQueue: Promise<unknown> = Promise.resolve();
+
+/**
+ * Shared serial queue for Supabase auth operations (sign-in, sign-up, sign-out, expired-session recovery).
+ * Lives here, not in AuthProvider, so the API client can use it without a cyclic import.
+ */
+export function enqueueAuthOp<T>(op: () => Promise<T>): Promise<T> {
+  const res = authOpQueue.then(op, op);
+  authOpQueue = res.catch(() => {});
+  return res;
+}

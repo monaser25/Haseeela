@@ -128,7 +128,7 @@ describe('Subscriptions Detail & Add Flows', () => {
       auth: {
         getSession: jest.fn().mockResolvedValue({
           data: {
-            session: { access_token: 'mock-test-access-token' },
+            session: { access_token: 'mock-test-access-token', user: { id: 'test-user-id' } },
           },
           error: null,
         }),

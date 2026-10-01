@@ -9,6 +9,7 @@ import {
   setAuthScope,
   resetAuthScope,
   bumpSessionEpoch,
+  enqueueAuthOp,
 } from './authScope';
 
 export {
@@ -40,14 +41,6 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 
 export interface AuthProviderProps {
   children: React.ReactNode;
-}
-
-let authOpQueue: Promise<any> = Promise.resolve();
-
-function enqueueAuthOp<T>(op: () => Promise<T>): Promise<T> {
-  const res = authOpQueue.then(op, op);
-  authOpQueue = res.catch(() => {});
-  return res;
 }
 
 export function AuthProvider({ children }: AuthProviderProps) {
