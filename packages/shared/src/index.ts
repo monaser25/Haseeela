@@ -9,3 +9,4 @@ export * from './lib/billing';
 export * from './selectors/financialSelectors';
 export * from './lib/invoiceCalculations';
 export * from './messages';
+export * from './lib/version';

@@ -1,6 +1,6 @@
 import { Prisma } from '@prisma/client';
 
-// Stateful mock store for AccountDeletion and all 10 financial models
+// Stateful mock store for AccountDeletion and all 11 per-user models
 let deletionDb = new Map<string, any>();
 let userDb = new Map<string, any>();
 let invoiceDb = new Map<string, any>();
@@ -12,6 +12,7 @@ let clientDb = new Map<string, any>();
 let categoryDb = new Map<string, any>();
 let notificationDb = new Map<string, any>();
 let auditLogDb = new Map<string, any>();
+let deviceTokenDb = new Map<string, any>();
 
 const cloneMap = (map: Map<string, any>) => {
   const c = new Map<string, any>();
@@ -34,6 +35,7 @@ const mockPrisma: any = {
   category: {},
   notification: {},
   auditLog: {},
+  deviceToken: {},
   $transaction: jest.fn(),
 };
 
@@ -304,6 +306,18 @@ const setupDefaultMockPrisma = () => {
     return { count };
   });
 
+  mockPrisma.deviceToken.deleteMany = jest.fn(async ({ where }: any) => {
+    let count = 0;
+    const entries = Array.from(deviceTokenDb.entries());
+    for (let i = 0; i < entries.length; i++) {
+      if (!where?.userId || entries[i][1].userId === where.userId) {
+        deviceTokenDb.delete(entries[i][0]);
+        count++;
+      }
+    }
+    return { count };
+  });
+
   mockPrisma.$transaction = jest.fn(async (callback: any) => {
     const sDel = cloneMap(deletionDb);
     const sUser = cloneMap(userDb);
@@ -316,6 +330,7 @@ const setupDefaultMockPrisma = () => {
     const sCat = cloneMap(categoryDb);
     const sNot = cloneMap(notificationDb);
     const sAud = cloneMap(auditLogDb);
+    const sDev = cloneMap(deviceTokenDb);
 
     try {
       return await callback(mockPrisma);
@@ -331,6 +346,7 @@ const setupDefaultMockPrisma = () => {
       categoryDb = sCat;
       notificationDb = sNot;
       auditLogDb = sAud;
+      deviceTokenDb = sDev;
       throw err;
     }
   });
@@ -382,6 +398,7 @@ const seedUserFinanceData = (userId: string) => {
   transactionDb.set(`tx-${userId}`, { id: `tx-${userId}`, userId, amount: 100 });
   notificationDb.set(`notif-${userId}`, { id: `notif-${userId}`, userId, title: 'Notif' });
   auditLogDb.set(`audit-${userId}`, { id: `audit-${userId}`, userId, action: 'CREATE' });
+  deviceTokenDb.set(`dev-${userId}`, { id: `dev-${userId}`, userId, token: `ExponentPushToken[${userId}]` });
 };
 
 describe('Production-Safe Account Deletion Lifecycle & Verification Seams', () => {
@@ -404,6 +421,7 @@ describe('Production-Safe Account Deletion Lifecycle & Verification Seams', () =
     categoryDb.clear();
     notificationDb.clear();
     auditLogDb.clear();
+    deviceTokenDb.clear();
 
     setupDefaultMockPrisma();
 
@@ -500,6 +518,7 @@ describe('Production-Safe Account Deletion Lifecycle & Verification Seams', () =
       expect(transactionDb.has('tx-user-a')).toBe(false);
       expect(notificationDb.has('notif-user-a')).toBe(false);
       expect(auditLogDb.has('audit-user-a')).toBe(false);
+      expect(deviceTokenDb.has('dev-user-a')).toBe(false);
 
       expect(userDb.has('user-b')).toBe(true);
       expect(clientDb.has('client-user-b')).toBe(true);
@@ -511,11 +530,12 @@ describe('Production-Safe Account Deletion Lifecycle & Verification Seams', () =
       expect(transactionDb.has('tx-user-b')).toBe(true);
       expect(notificationDb.has('notif-user-b')).toBe(true);
       expect(auditLogDb.has('audit-user-b')).toBe(true);
+      expect(deviceTokenDb.has('dev-user-b')).toBe(true);
     });
   });
 
   describe('3. Transaction Rollback & Fenced Cleanup Verification', () => {
-    it('rolls back scoped finance cleanup and restores ALL 10 tables when late commit fails after all deletes', async () => {
+    it('rolls back scoped finance cleanup and restores ALL 11 tables when late commit fails after all deletes', async () => {
       const origUpdateMany = mockPrisma.accountDeletion.updateMany;
       mockPrisma.accountDeletion.updateMany = jest.fn(async (args: any) => {
         if (args?.data?.status === 'COMPLETED') {
@@ -536,7 +556,7 @@ describe('Production-Safe Account Deletion Lifecycle & Verification Seams', () =
         deletionPending: true,
       });
 
-      // Assert ALL 10 financial stores rolled back completely for user-real
+      // Assert ALL 11 per-user stores rolled back completely for user-real
       expect(userDb.has('user-real')).toBe(true);
       expect(clientDb.has('client-user-real')).toBe(true);
       expect(subscriptionDb.has('sub-user-real')).toBe(true);
@@ -547,6 +567,7 @@ describe('Production-Safe Account Deletion Lifecycle & Verification Seams', () =
       expect(transactionDb.has('tx-user-real')).toBe(true);
       expect(notificationDb.has('notif-user-real')).toBe(true);
       expect(auditLogDb.has('audit-user-real')).toBe(true);
+      expect(deviceTokenDb.has('dev-user-real')).toBe(true);
 
       const marker = deletionDb.get('user-real');
       expect(marker.status).toBe('AUTH_DELETED');
@@ -596,7 +617,7 @@ describe('Production-Safe Account Deletion Lifecycle & Verification Seams', () =
         expect(json.code).toBe('CLAIM_EXPIRED');
         expect(json.deletionPending).toBe(true);
 
-        // All 10 finance stores remain completely unchanged (zero deletes executed)
+        // All 11 per-user stores remain completely unchanged (zero deletes executed)
         expect(userDb.has('user-real')).toBe(true);
         expect(clientDb.has('client-user-real')).toBe(true);
         expect(subscriptionDb.has('sub-user-real')).toBe(true);
@@ -607,6 +628,7 @@ describe('Production-Safe Account Deletion Lifecycle & Verification Seams', () =
         expect(transactionDb.has('tx-user-real')).toBe(true);
         expect(notificationDb.has('notif-user-real')).toBe(true);
         expect(auditLogDb.has('audit-user-real')).toBe(true);
+        expect(deviceTokenDb.has('dev-user-real')).toBe(true);
 
         const marker = deletionDb.get('user-real');
         expect(marker.status).toBe('AUTH_DELETED');
