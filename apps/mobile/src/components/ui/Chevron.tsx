@@ -1,4 +1,5 @@
 import React from 'react';
+import { View } from 'react-native';
 import { ChevronRight } from 'lucide-react-native';
 import { useIsRTL } from '../../i18n';
 
@@ -15,11 +16,8 @@ export interface ChevronProps {
 export function Chevron({ size = 18, color, testID }: ChevronProps) {
   const isRTL = useIsRTL();
   return (
-    <ChevronRight
-      size={size}
-      color={color}
-      testID={testID}
-      style={isRTL ? { transform: [{ scaleX: -1 }] } : undefined}
-    />
+    <View style={isRTL ? { transform: [{ scaleX: -1 }] } : undefined}>
+      <ChevronRight size={size} color={color} testID={testID} />
+    </View>
   );
 }

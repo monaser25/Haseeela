@@ -114,11 +114,12 @@ export default function DeleteAccountScreen() {
           hitSlop={8}
           style={[styles.backBtn, { opacity: isDeleting ? 0.4 : 1 }]}
         >
-          <ArrowLeft
-            size={22}
-            color={theme.colors.text}
-            style={isRTL ? { transform: [{ scaleX: -1 }] } : undefined}
-          />
+          <View style={isRTL ? { transform: [{ scaleX: -1 }] } : undefined}>
+            <ArrowLeft
+              size={22}
+              color={theme.colors.text}
+            />
+          </View>
         </Pressable>
         <Text
           accessibilityRole="header"

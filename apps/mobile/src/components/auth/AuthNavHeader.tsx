@@ -51,11 +51,12 @@ export function AuthNavHeader({
             ]}
             testID="auth-back-button"
           >
-            <ChevronLeft
-              size={20}
-              color={theme.colors.text}
-              style={isRTL ? { transform: [{ scaleX: -1 }] } : undefined}
-            />
+            <View style={isRTL ? { transform: [{ scaleX: -1 }] } : undefined}>
+              <ChevronLeft
+                size={20}
+                color={theme.colors.text}
+              />
+            </View>
           </Pressable>
         ) : null}
       </View>

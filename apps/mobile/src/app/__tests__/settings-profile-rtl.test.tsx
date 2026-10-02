@@ -118,10 +118,10 @@ describe('RTL & Accessibility rendering assertions', () => {
     expect(getByTestId('settings-logout-button').props.accessibilityRole).toBe('button');
     expect(getByTestId('settings-currency-row').props.accessibilityRole).toBe('button');
 
-    // Back chevron carries native mirrored scaleX: -1 in RTL
+    // Back arrow is mirrored in RTL by its wrapping View (a transform on the SVG itself renders nothing on Android)
     const backBtn = getByTestId('settings-back-button');
     const arrowIcon = backBtn.findByProps({ size: 22 });
-    expect(arrowIcon.props.style).toEqual({ transform: [{ scaleX: -1 }] });
+    expect(arrowIcon.parent?.props.style).toEqual({ transform: [{ scaleX: -1 }] });
   });
 
   it('renders Profile in Arabic with localized fields, accessibility roles, and mirrored RTL chevron', async () => {
@@ -144,10 +144,10 @@ describe('RTL & Accessibility rendering assertions', () => {
     expect(getByTestId('profile-save-button').props.accessibilityRole).toBe('button');
     expect(getByTestId('profile-change-password-button').props.accessibilityRole).toBe('button');
 
-    // Back chevron carries native mirrored scaleX: -1 in RTL
+    // Back arrow is mirrored in RTL by its wrapping View (a transform on the SVG itself renders nothing on Android)
     const backBtn = getByTestId('profile-back-button');
     const arrowIcon = backBtn.findByProps({ size: 22 });
-    expect(arrowIcon.props.style).toEqual({ transform: [{ scaleX: -1 }] });
+    expect(arrowIcon.parent?.props.style).toEqual({ transform: [{ scaleX: -1 }] });
   });
 
   it('renders Notifications in Arabic with localized groups, filter counts, and mirrored RTL chevron', async () => {
@@ -170,9 +170,9 @@ describe('RTL & Accessibility rendering assertions', () => {
     expect(getByTestId('notif-tab-all').props.accessibilityRole).toBe('button');
     expect(getByTestId('notif-tab-unread').props.accessibilityRole).toBe('button');
 
-    // Back chevron carries native mirrored scaleX: -1 in RTL
+    // Back arrow is mirrored in RTL by its wrapping View (a transform on the SVG itself renders nothing on Android)
     const backBtn = getByTestId('notifications-back-button');
     const arrowIcon = backBtn.findByProps({ size: 22 });
-    expect(arrowIcon.props.style).toEqual({ transform: [{ scaleX: -1 }] });
+    expect(arrowIcon.parent?.props.style).toEqual({ transform: [{ scaleX: -1 }] });
   });
 });

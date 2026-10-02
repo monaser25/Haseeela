@@ -323,11 +323,12 @@ export default function NotificationsScreen() {
           hitSlop={8}
           style={styles.backBtn}
         >
-          <ArrowLeft
-            size={22}
-            color={theme.colors.text}
-            style={isRTL ? { transform: [{ scaleX: -1 }] } : undefined}
-          />
+          <View style={isRTL ? { transform: [{ scaleX: -1 }] } : undefined}>
+            <ArrowLeft
+              size={22}
+              color={theme.colors.text}
+            />
+          </View>
         </Pressable>
 
         <Text
