@@ -1259,4 +1259,16 @@ export const ar: Messages = {
   'home.themeDark': 'الوضع الداكن',
   'home.switchThemeLightA11y': 'التبديل إلى الوضع الفاتح',
   'home.switchThemeDarkA11y': 'التبديل إلى الوضع الداكن',
+
+  'push.billingDue.title': 'دفعة تقترب',
+  'push.billingDue.body': 'هناك دفعة اشتراك أو عميل مستحقة قريباً.',
+  'push.invoiceOverdue.title': 'فاتورة متأخرة',
+  'push.invoiceOverdue.body': 'هناك فاتورة تجاوزت تاريخ استحقاقها.',
+  'push.reminders.title': 'تذكيرات جديدة',
+  'push.reminders.body': 'لديك تذكيرات جديدة.',
+
+  'update.required.title': 'التحديث مطلوب',
+  'update.required.body': 'لم يعد هذا الإصدار من حصيلة مدعوماً. يرجى التحديث إلى أحدث إصدار للمتابعة.',
+  'update.required.button': 'حدّث الآن',
+  'update.required.openFailed': 'تعذر فتح المتجر. يرجى البحث عن حصيلة في متجر التطبيقات.',
 };

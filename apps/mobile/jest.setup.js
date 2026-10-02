@@ -80,6 +80,27 @@ jest.mock('expo-localization', () => ({
   ],
 }));
 
+// Native push modules are not available under Jest. Defaults model a simulator with no permission;
+// individual tests override behaviour on the mocked functions.
+jest.mock('expo-device', () => ({
+  __esModule: true,
+  isDevice: false,
+}));
+
+jest.mock('expo-notifications', () => ({
+  __esModule: true,
+  DEFAULT_ACTION_IDENTIFIER: 'expo.modules.notifications.actions.DEFAULT',
+  AndroidImportance: { DEFAULT: 3, HIGH: 4, MAX: 5 },
+  setNotificationHandler: jest.fn(),
+  setNotificationChannelAsync: jest.fn(async () => null),
+  getPermissionsAsync: jest.fn(async () => ({ status: 'undetermined', granted: false, canAskAgain: true })),
+  requestPermissionsAsync: jest.fn(async () => ({ status: 'denied', granted: false, canAskAgain: false })),
+  getExpoPushTokenAsync: jest.fn(async () => ({ type: 'expo', data: 'ExponentPushToken[mock-token]' })),
+  addNotificationResponseReceivedListener: jest.fn(() => ({ remove: jest.fn() })),
+  getLastNotificationResponse: jest.fn(() => null),
+  clearLastNotificationResponse: jest.fn(),
+}));
+
 // Mock expo-router
 jest.mock('expo-router', () => {
   const React = require('react');
@@ -93,6 +114,7 @@ jest.mock('expo-router', () => {
     })),
     useLocalSearchParams: jest.fn(() => ({})),
     usePathname: jest.fn(() => '/'),
+    useRootNavigationState: jest.fn(() => ({ key: 'root' })),
     useSegments: jest.fn(() => ['(app)', '(tabs)']),
     Link: ({ children }: any) => children,
     Redirect: ({ href }: any) => React.createElement(View, { testID: 'redirect-mock', href }),

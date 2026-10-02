@@ -8,6 +8,8 @@ import { ThemeProvider, useTheme } from '../theme';
 import { I18nProvider, initLocale } from '../i18n';
 import { QueryProvider } from '../query';
 import { AuthProvider, useAuth } from '../auth';
+import { PushNavigationHandler } from '../services/push/PushNavigationHandler';
+import { ForceUpdateGate } from '../services/update/ForceUpdateGate';
 
 // Keep native splash screen visible until initialization completes
 SplashScreen.preventAutoHideAsync().catch(() => {});
@@ -66,7 +68,10 @@ export default function RootLayout() {
         <I18nProvider initialLocale={initialLocale ?? undefined}>
           <QueryProvider>
             <AuthProvider>
-              <RootContent isLocaleReady={initialLocale !== null} />
+              <ForceUpdateGate>
+                <PushNavigationHandler />
+                <RootContent isLocaleReady={initialLocale !== null} />
+              </ForceUpdateGate>
             </AuthProvider>
           </QueryProvider>
         </I18nProvider>

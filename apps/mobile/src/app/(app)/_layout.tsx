@@ -5,6 +5,7 @@ import { useAuth } from '../../auth';
 import { useTheme } from '../../theme';
 import { useI18n } from '../../i18n';
 import { usePreferences, useOverview } from '../../api';
+import { PushRegistrar } from '../../services/push/PushRegistrar';
 
 export function checkNeedsOnboarding(
   prefs: { onboardedAt: string | null } | undefined | null,
@@ -90,67 +91,70 @@ export default function AppLayout() {
   }
 
   return (
-    <Stack
-      screenOptions={{
-        headerShown: false,
-        contentStyle: { backgroundColor: theme.colors.bg },
-      }}
-    >
-      <Stack.Screen name="(tabs)" />
-      <Stack.Screen name="onboarding" />
-      <Stack.Screen
-        name="transaction/new"
-        options={{ presentation: 'modal' }}
-      />
-      <Stack.Screen
-        name="transaction/[id]"
-        options={{ presentation: 'modal' }}
-      />
-      <Stack.Screen
-        name="client/new"
-        options={{ presentation: 'modal' }}
-      />
-      <Stack.Screen
-        name="client/[id]"
-        options={{ presentation: 'card' }}
-      />
-      <Stack.Screen
-        name="subscriptions"
-        options={{ presentation: 'card' }}
-      />
-      <Stack.Screen
-        name="subscription/new"
-        options={{ presentation: 'modal' }}
-      />
-      <Stack.Screen
-        name="subscription/[id]"
-        options={{ presentation: 'card' }}
-      />
-      <Stack.Screen
-        name="invoices"
-        options={{ presentation: 'card' }}
-      />
-      <Stack.Screen
-        name="invoice/new"
-        options={{ presentation: 'modal' }}
-      />
-      <Stack.Screen
-        name="invoice/[id]"
-        options={{ presentation: 'card' }}
-      />
-      <Stack.Screen
-        name="settings"
-        options={{ presentation: 'card' }}
-      />
-      <Stack.Screen
-        name="profile"
-        options={{ presentation: 'card' }}
-      />
-      <Stack.Screen
-        name="notifications"
-        options={{ presentation: 'card' }}
-      />
-    </Stack>
+    <>
+      <PushRegistrar />
+      <Stack
+        screenOptions={{
+          headerShown: false,
+          contentStyle: { backgroundColor: theme.colors.bg },
+        }}
+      >
+        <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="onboarding" />
+        <Stack.Screen
+          name="transaction/new"
+          options={{ presentation: 'modal' }}
+        />
+        <Stack.Screen
+          name="transaction/[id]"
+          options={{ presentation: 'modal' }}
+        />
+        <Stack.Screen
+          name="client/new"
+          options={{ presentation: 'modal' }}
+        />
+        <Stack.Screen
+          name="client/[id]"
+          options={{ presentation: 'card' }}
+        />
+        <Stack.Screen
+          name="subscriptions"
+          options={{ presentation: 'card' }}
+        />
+        <Stack.Screen
+          name="subscription/new"
+          options={{ presentation: 'modal' }}
+        />
+        <Stack.Screen
+          name="subscription/[id]"
+          options={{ presentation: 'card' }}
+        />
+        <Stack.Screen
+          name="invoices"
+          options={{ presentation: 'card' }}
+        />
+        <Stack.Screen
+          name="invoice/new"
+          options={{ presentation: 'modal' }}
+        />
+        <Stack.Screen
+          name="invoice/[id]"
+          options={{ presentation: 'card' }}
+        />
+        <Stack.Screen
+          name="settings"
+          options={{ presentation: 'card' }}
+        />
+        <Stack.Screen
+          name="profile"
+          options={{ presentation: 'card' }}
+        />
+        <Stack.Screen
+          name="notifications"
+          options={{ presentation: 'card' }}
+        />
+      </Stack>
+    </>
   );
 }
 
