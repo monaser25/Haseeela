@@ -33,6 +33,14 @@ const mockPrisma: any = {
     deleteMany: jest.fn(),
     count: jest.fn(),
   },
+  accountDeletion: {
+    findUnique: jest.fn(),
+    findFirst: jest.fn(),
+    findMany: jest.fn(),
+    create: jest.fn(),
+    update: jest.fn(),
+    upsert: jest.fn(),
+  },
 };
 
 jest.mock('@/server/prisma', () => ({ prisma: mockPrisma }));
@@ -65,6 +73,7 @@ describe('Next route handler safeguards', () => {
     process.env.ENABLE_DEV_AUTH = 'true';
     jest.clearAllMocks();
     mockPrisma.$transaction.mockImplementation((callback: any) => callback(mockPrisma));
+    mockPrisma.accountDeletion.findUnique.mockResolvedValue(null);
     mockPrisma.user.findUnique.mockResolvedValue({ id: 'user-a', email: 'user-a@example.com' });
     // The client one-time-payment sync looks up its single deterministic row;
     // default to "none exists" so retainer/billing edits stay no-ops.

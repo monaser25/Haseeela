@@ -4,7 +4,7 @@ import process from 'node:process';
 
 import { ar, en } from '../apps/web/src/messages/index';
 
-const messagesDir = path.resolve(process.cwd(), 'apps/web/src/messages');
+const messagesDir = path.resolve(process.cwd(), 'packages/shared/src/messages');
 const files = [
   { locale: 'en', file: path.join(messagesDir, 'en.ts'), messages: en },
   { locale: 'ar', file: path.join(messagesDir, 'ar.ts'), messages: ar },

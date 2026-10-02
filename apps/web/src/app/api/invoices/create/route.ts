@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { authenticateRequest, getUserId } from '@/server/auth';
 import { ensureUser } from '@/server/devUser';
-import { withApiError } from '@/server/errors';
+import { withApiError, HttpError } from '@/server/errors';
 import { toDate } from '@/server/recurring-billing';
 import { prisma } from '@/server/prisma';
 import { InvoiceSchema } from '@/server/validation';
@@ -16,6 +16,16 @@ export const POST = async (request: Request) => withApiError(request, async () =
   const data = InvoiceSchema.parse(await request.json());
 
   await ensureUser(user);
+
+  if (data.clientId) {
+    const client = await prisma.client.findFirst({
+      where: { id: data.clientId, userId },
+      select: { id: true },
+    });
+    if (!client) {
+      throw new HttpError(404, 'Client not found');
+    }
+  }
 
   const { items, subtotal, taxAmount, total } = computeInvoiceTotals(data.lineItems, data.taxRate, data.discount);
 

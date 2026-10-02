@@ -36,6 +36,7 @@ model User {
   invoices             Invoice[]
   notifications        Notification[]
   auditLogs            AuditLog[]
+  deviceTokens         DeviceToken[]
 }
 
 model Client {
@@ -210,4 +211,36 @@ model Notification {
   @@unique([userId, refKey])
   @@index([userId])
   @@index([userId, read])
+}
+
+model AccountDeletion {
+  id             String    @id @default(uuid())
+  userId         String    @unique
+  status         String    @default("PENDING") // PENDING, AUTH_DELETED, COMPLETED
+  isDev          Boolean   @default(false)
+  attempts       Int       @default(0)
+  lastErrorCode  String?
+  ownerToken     String?
+  leaseExpiresAt DateTime?
+  completedAt    DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@index([status])
+  @@index([status, leaseExpiresAt])
+}
+
+
+// Expo push tokens for the mobile app. Server-only (RLS on, no client policies).
+model DeviceToken {
+  id         String   @id @default(uuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token      String   @unique
+  platform   String   // ios, android
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  lastSeenAt DateTime @default(now())
+
+  @@index([userId])
 }

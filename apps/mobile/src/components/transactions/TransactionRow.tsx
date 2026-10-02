@@ -1,0 +1,326 @@
+import React from 'react';
+import {
+  View,
+  Text,
+  Pressable,
+  StyleSheet,
+} from 'react-native';
+import type { Transaction, CurrencyCode } from '@haseela/shared';
+import {
+  categoryLabel,
+  daysOverdue,
+} from '@haseela/shared';
+import {
+  TrendingUp,
+  TrendingDown,
+  Clock,
+  AlertCircle,
+  CheckCircle2,
+  Pencil,
+  RotateCcw,
+} from 'lucide-react-native';
+import { useTheme } from '../../theme';
+import { useI18n } from '../../i18n';
+import { parseCalendarDate } from '../../utils/calendarDate';
+
+export interface TransactionRowProps {
+  transaction: Transaction;
+  currency: CurrencyCode;
+  onPress: (transaction: Transaction) => void;
+  onCompletePending?: (transaction: Transaction) => void;
+  onRevertPending?: (transaction: Transaction) => void;
+  showPendingActions?: boolean;
+}
+
+export function TransactionRow({
+  transaction,
+  currency,
+  onPress,
+  onCompletePending,
+  onRevertPending,
+  showPendingActions = false,
+}: TransactionRowProps) {
+  const { theme } = useTheme();
+  const { t, formatCurrency, formatDate } = useI18n();
+
+  const isIncome = transaction.type === 'INCOME';
+  const isPending = transaction.status === 'PENDING';
+  const canRevert = transaction.status === 'COMPLETED' && Boolean(transaction.expectedDate);
+  const overdueDays = isPending ? daysOverdue(transaction) : 0;
+  const isOverdue = overdueDays > 0;
+
+  const title = transaction.name || transaction.notes || t('transactions.labels.unnamed');
+  const catLabel = categoryLabel(transaction.categoryId, (k) => t(k));
+
+  const formattedAmount = formatCurrency(transaction.amount, currency);
+  const signedAmount = `${isIncome ? '+' : '-'}${formattedAmount}`;
+
+  const txDate = transaction.expectedDate || transaction.date;
+  const formattedDate = formatDate(parseCalendarDate(txDate), {
+    month: 'short',
+    day: 'numeric',
+  });
+
+  // Source label
+  const sourceText =
+    transaction.sourceType === 'client'
+      ? t('transactions.source.client')
+      : transaction.sourceType === 'subscription'
+        ? t('transactions.source.subscription')
+        : (transaction.sourceType as string) === 'invoice'
+          ? t('transactions.source.invoice')
+          : t('transactions.source.manual');
+
+  // Status text for accessibility and badge
+  let statusText = t('transactions.status.completed');
+  if (isOverdue) {
+    statusText = overdueDays === 1
+      ? t('pending.badge.overdue', { days: 1 })
+      : t('pending.badge.overduePlural', { days: overdueDays });
+  } else if (isPending) {
+    statusText = t('transactions.status.pending');
+  }
+
+  const accessibilityLabel = `${title}, ${signedAmount}, ${formattedDate}, ${statusText}`;
+
+  return (
+    <Pressable
+      testID={`transaction-row-${transaction.id}`}
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel}
+      onPress={() => onPress(transaction)}
+      style={({ pressed }) => [
+        styles.row,
+        {
+          backgroundColor: pressed ? theme.colors.surfaceHover : theme.colors.surface,
+          borderBottomColor: theme.colors.border,
+        },
+      ]}
+    >
+      <View style={styles.leftCol}>
+        <View
+          style={[
+            styles.typeIconBox,
+            {
+              backgroundColor: isIncome ? theme.colors.positiveTint : theme.colors.negativeTint,
+            },
+          ]}
+        >
+          {isIncome ? (
+            <TrendingUp size={18} color={theme.colors.positiveText} />
+          ) : (
+            <TrendingDown size={18} color={theme.colors.negativeText} />
+          )}
+        </View>
+
+        <View style={styles.contentCol}>
+          <Text
+            style={[theme.typography.bodySemiBold, { color: theme.colors.text }]}
+            numberOfLines={1}
+          >
+            {title}
+          </Text>
+
+          <View style={styles.metaRow}>
+            {/* Category tag */}
+            <View
+              style={[
+                styles.badge,
+                {
+                  backgroundColor: theme.colors.surfaceElevated,
+                  borderColor: theme.colors.border,
+                },
+              ]}
+            >
+              <Text style={[theme.typography.micro, { color: theme.colors.textSecondary }]}>
+                {catLabel}
+              </Text>
+            </View>
+
+            {/* Source badge */}
+            <View
+              style={[
+                styles.badge,
+                {
+                  backgroundColor: theme.colors.surfaceElevated,
+                  borderColor: theme.colors.border,
+                },
+              ]}
+            >
+              <Text style={[theme.typography.micro, { color: theme.colors.textMuted }]}>
+                {sourceText}
+              </Text>
+            </View>
+
+            {/* Status indicator (icon + text) */}
+            {isOverdue ? (
+              <View
+                style={[
+                  styles.statusBadge,
+                  { backgroundColor: theme.colors.negativeTint, borderColor: theme.colors.negative },
+                ]}
+              >
+                <AlertCircle size={12} color={theme.colors.negativeText} />
+                <Text style={[theme.typography.micro, { color: theme.colors.negativeText, fontWeight: '600' }]}>
+                  {statusText}
+                </Text>
+              </View>
+            ) : isPending ? (
+              <View
+                style={[
+                  styles.statusBadge,
+                  { backgroundColor: theme.colors.warningTint, borderColor: theme.colors.warning },
+                ]}
+              >
+                <Clock size={12} color={theme.colors.warningText} />
+                <Text style={[theme.typography.micro, { color: theme.colors.warningText, fontWeight: '600' }]}>
+                  {statusText}
+                </Text>
+              </View>
+            ) : transaction.isEdited ? (
+              <View
+                style={[
+                  styles.statusBadge,
+                  { backgroundColor: theme.colors.surfaceElevated, borderColor: theme.colors.border },
+                ]}
+              >
+                <Pencil size={11} color={theme.colors.textMuted} />
+                <Text style={[theme.typography.micro, { color: theme.colors.textMuted }]}>
+                  {t('transactions.badges.edited')}
+                </Text>
+              </View>
+            ) : null}
+          </View>
+        </View>
+      </View>
+
+      <View style={styles.rightCol}>
+        <Text
+          style={[
+            theme.typography.bodySemiBold,
+            styles.amount,
+            { color: isIncome ? theme.colors.positiveText : theme.colors.negativeText },
+          ]}
+        >
+          {signedAmount}
+        </Text>
+
+        {showPendingActions && isPending && onCompletePending ? (
+          <Pressable
+            testID={`quick-complete-${transaction.id}`}
+            accessibilityRole="button"
+            accessibilityLabel={t('transactions.pending.markAsReceived')}
+            onPress={(e) => {
+              e?.stopPropagation?.();
+              onCompletePending(transaction);
+            }}
+            hitSlop={8}
+            style={[
+              styles.quickActionBtn,
+              { backgroundColor: theme.colors.positiveTint, borderColor: theme.colors.positiveText },
+            ]}
+          >
+            <CheckCircle2 size={13} color={theme.colors.positiveText} />
+            <Text style={[theme.typography.micro, { color: theme.colors.positiveText, fontWeight: '600' }]}>
+              {t('transactions.pending.markAsReceived')}
+            </Text>
+          </Pressable>
+        ) : showPendingActions && canRevert && onRevertPending ? (
+          <Pressable
+            testID={`quick-revert-${transaction.id}`}
+            accessibilityRole="button"
+            accessibilityLabel={t('transactions.pending.revert')}
+            onPress={(e) => {
+              e?.stopPropagation?.();
+              onRevertPending(transaction);
+            }}
+            hitSlop={8}
+            style={[
+              styles.quickActionBtn,
+              { backgroundColor: theme.colors.warningTint, borderColor: theme.colors.warningText },
+            ]}
+          >
+            <RotateCcw size={13} color={theme.colors.warningText} />
+            <Text style={[theme.typography.micro, { color: theme.colors.warningText, fontWeight: '600' }]}>
+              {t('transactions.pending.revert')}
+            </Text>
+          </Pressable>
+        ) : (
+          <Text style={[theme.typography.caption, { color: theme.colors.textMuted }]}>
+            {formattedDate}
+          </Text>
+        )}
+      </View>
+    </Pressable>
+  );
+}
+
+const styles = StyleSheet.create({
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    minHeight: 56, // >= 44pt touch target
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    gap: 12,
+  },
+  leftCol: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    gap: 12,
+  },
+  typeIconBox: {
+    width: 38,
+    height: 38,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  contentCol: {
+    flex: 1,
+    justifyContent: 'center',
+    gap: 4,
+  },
+  metaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 6,
+  },
+  badge: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+    borderWidth: 1,
+  },
+  statusBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+    borderWidth: 1,
+  },
+  rightCol: {
+    alignItems: 'flex-end',
+    justifyContent: 'center',
+    gap: 4,
+  },
+  amount: {
+    fontVariant: ['tabular-nums'],
+  },
+  quickActionBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    minHeight: 28,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    borderWidth: 1,
+  },
+});

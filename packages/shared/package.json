@@ -1,0 +1,80 @@
+{
+  "name": "@haseela/shared",
+  "version": "1.0.0",
+  "private": true,
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    },
+    "./types/finance": {
+      "types": "./src/types/finance.ts",
+      "default": "./src/types/finance.ts"
+    },
+    "./lib/locales": {
+      "types": "./src/lib/locales.ts",
+      "default": "./src/lib/locales.ts"
+    },
+    "./lib/textDirection": {
+      "types": "./src/lib/textDirection.ts",
+      "default": "./src/lib/textDirection.ts"
+    },
+    "./lib/format": {
+      "types": "./src/lib/format.ts",
+      "default": "./src/lib/format.ts"
+    },
+    "./lib/currency": {
+      "types": "./src/lib/currency.ts",
+      "default": "./src/lib/currency.ts"
+    },
+    "./lib/enumLabels": {
+      "types": "./src/lib/enumLabels.ts",
+      "default": "./src/lib/enumLabels.ts"
+    },
+    "./lib/billing": {
+      "types": "./src/lib/billing.ts",
+      "default": "./src/lib/billing.ts"
+    },
+    "./selectors/financialSelectors": {
+      "types": "./src/selectors/financialSelectors.ts",
+      "default": "./src/selectors/financialSelectors.ts"
+    },
+    "./server/validation": {
+      "types": "./src/server/validation.ts",
+      "default": "./src/server/validation.ts"
+    },
+    "./messages/en": {
+      "types": "./src/messages/en.ts",
+      "default": "./src/messages/en.ts"
+    },
+    "./messages/ar": {
+      "types": "./src/messages/ar.ts",
+      "default": "./src/messages/ar.ts"
+    },
+    "./messages": {
+      "types": "./src/messages/index.ts",
+      "default": "./src/messages/index.ts"
+    },
+    "./*": {
+      "types": "./src/*.ts",
+      "default": "./src/*.ts"
+    }
+  },
+  "dependencies": {
+    "zod": "^3.22.4"
+  },
+  "peerDependencies": {
+    "react": "^18.0.0 || ^19.0.0"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.61",
+    "typescript": "^5.3.3"
+  }
+}

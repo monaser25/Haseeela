@@ -15,5 +15,8 @@
   },
   "prisma": {
     "schema": "apps/web/prisma/schema.prisma"
+  },
+  "devDependencies": {
+    "jest-util": "^29.7.0"
   }
 }

@@ -1,6 +1,8 @@
 import { Prisma } from '@prisma/client';
 import type { AuthenticatedUser } from './auth';
 import { prisma } from './prisma';
+import { HttpError } from './errors';
+
 
 const makeEmail = (userId: string) => {
   const safeId = userId.toLowerCase().replace(/[^a-z0-9._-]/g, '-');
@@ -9,6 +11,15 @@ const makeEmail = (userId: string) => {
 
 export const ensureUser = async (user: AuthenticatedUser) => {
   const userId = user.id;
+
+  // Fail closed if this user is marked for deletion in any state
+  const userDeletion = await prisma.accountDeletion.findUnique({
+    where: { userId },
+  });
+  if (userDeletion) {
+    throw new HttpError(403, 'Account is pending deletion or deleted');
+  }
+
   const email = user.email || makeEmail(userId);
   const name = user.name?.trim() || email.split('@')[0] || 'Haseeela User';
   const existing = await prisma.user.findUnique({ where: { id: userId } });
@@ -25,16 +36,18 @@ export const ensureUser = async (user: AuthenticatedUser) => {
   // No workspace row exists for this auth id yet. If the email is already taken
   // by a DIFFERENT (stale) row — e.g. the Supabase account was deleted and then
   // re-created with the same email, giving it a brand-new auth id — adopt that
-  // existing workspace by re-pointing it to the current id. All `userId`
-  // foreign keys are ON UPDATE CASCADE, so existing data (transactions,
-  // clients, …) moves with it.
-  //
-  // Without this, `prisma.user.create` below hits the unique-email constraint
-  // (P2002) and used to be swallowed silently — leaving NO row for `userId`, so
-  // every later write failed the userId foreign key (P2003) and surfaced as a
-  // 500 "Internal server error".
+  // existing workspace by re-pointing it to the current id, UNLESS the previous
+  // owner was marked for deletion.
   const existingByEmail = await prisma.user.findUnique({ where: { email } });
   if (existingByEmail && existingByEmail.id !== userId) {
+    const emailOwnerDeletion = await prisma.accountDeletion.findUnique({
+      where: { userId: existingByEmail.id },
+    });
+    if (emailOwnerDeletion) {
+      // Never delete another user's financial workspace from ensureUser.
+      // Fail closed with a conflict error until background maintenance cleans up.
+      throw new HttpError(409, 'Previous workspace for this email is pending cleanup. Please retry shortly.');
+    }
     await prisma.user.update({ where: { email }, data: { id: userId } });
     return;
   }
@@ -55,3 +68,4 @@ export const ensureUser = async (user: AuthenticatedUser) => {
     throw err;
   }
 };
+

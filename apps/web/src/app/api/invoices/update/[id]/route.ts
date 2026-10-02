@@ -18,6 +18,16 @@ export const PUT = async (request: Request, { params }: { params: { id: string }
     const existing = await prisma.invoice.findFirst({ where: { id: params.id, userId } });
     if (!existing) throw new HttpError(404, 'Invoice not found');
 
+    if (data.clientId) {
+      const client = await prisma.client.findFirst({
+        where: { id: data.clientId, userId },
+        select: { id: true },
+      });
+      if (!client) {
+        throw new HttpError(404, 'Client not found');
+      }
+    }
+
     const { items, subtotal, taxAmount, total } = computeInvoiceTotals(data.lineItems, data.taxRate, data.discount);
 
     const invoice = await prisma.$transaction(async (tx) => {

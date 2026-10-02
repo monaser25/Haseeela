@@ -1,13 +1,9 @@
 import { DEFAULT_LOCALE, type Locale } from '../lib/locales';
 import React from 'react';
-import { ar } from './ar';
-import { en, type MessageKey, type Messages } from './en';
+import { ar, en, type MessageKey, type Messages, type MessageVars } from '@haseela/shared/messages';
 
-export { ar } from './ar';
-export { en } from './en';
-export type { MessageKey, Messages } from './en';
-
-export type MessageVars = Record<string, string | number | React.ReactNode>;
+export { ar, en };
+export type { MessageKey, Messages, MessageVars };
 
 const messages = {
   en,
