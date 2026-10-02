@@ -1,6 +1,6 @@
 import React from 'react';
-import { I18nManager } from 'react-native';
 import { ChevronRight } from 'lucide-react-native';
+import { useIsRTL } from '../../i18n';
 
 export interface ChevronProps {
   size?: number;
@@ -13,12 +13,13 @@ export interface ChevronProps {
  * flipped horizontally when the app is running RTL.
  */
 export function Chevron({ size = 18, color, testID }: ChevronProps) {
+  const isRTL = useIsRTL();
   return (
     <ChevronRight
       size={size}
       color={color}
       testID={testID}
-      style={I18nManager.isRTL ? { transform: [{ scaleX: -1 }] } : undefined}
+      style={isRTL ? { transform: [{ scaleX: -1 }] } : undefined}
     />
   );
 }

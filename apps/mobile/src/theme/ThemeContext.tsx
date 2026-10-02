@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useMemo, useEffect, useRef,
 import { useColorScheme as useDeviceColorScheme } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Theme, lightTheme, darkTheme } from './theme';
+import { useCoverTransition } from '../components/motion/TransitionCover';
 
 export type ColorSchemePreference = 'light' | 'dark' | 'system';
 
@@ -33,6 +34,10 @@ export function ThemeProvider({ children, initialPreference }: ThemeProviderProp
     initialPreference ?? 'system'
   );
 
+  const runTransition = useCoverTransition();
+  // Latest preference asked for. Commits read it, so rapid toggles during a transition end on the
+  // newest request instead of replaying an older one.
+  const requestedRef = useRef<ColorSchemePreference>(initialPreference ?? 'system');
   const userSelectedRef = useRef<boolean>(false);
   const writeSequenceRef = useRef<number>(0);
   const pendingWriteRef = useRef<Promise<void>>(Promise.resolve());
@@ -66,6 +71,7 @@ export function ThemeProvider({ children, initialPreference }: ThemeProviderProp
         // Avoid slow hydration overwriting newer user selection
         if (userSelectedRef.current) return;
         if (isValidThemePreference(stored)) {
+          requestedRef.current = stored;
           setPreferenceState(stored);
         }
       })
@@ -92,21 +98,25 @@ export function ThemeProvider({ children, initialPreference }: ThemeProviderProp
   const setPreference = useCallback(
     (nextPref: ColorSchemePreference) => {
       userSelectedRef.current = true;
-      setPreferenceState(nextPref);
+      requestedRef.current = nextPref;
       persistPreference(nextPref);
+      const nextScheme = nextPref === 'system' ? (deviceColorScheme === 'dark' ? 'dark' : 'light') : nextPref;
+      if (nextScheme === resolvedScheme) {
+        // Same palette (e.g. "system" while the device is already light): nothing to animate.
+        setPreferenceState(nextPref);
+        return;
+      }
+      // Dip through the OLD background while the palette swaps, then fade into the new one.
+      runTransition(() => setPreferenceState(requestedRef.current), theme.colors.bg);
     },
-    [persistPreference]
+    [persistPreference, runTransition, theme.colors.bg, deviceColorScheme, resolvedScheme]
   );
 
   const toggleTheme = useCallback(() => {
-    userSelectedRef.current = true;
-    setPreferenceState((prev) => {
-      const current = prev === 'system' ? (deviceColorScheme === 'dark' ? 'dark' : 'light') : prev;
-      const nextPref = current === 'dark' ? 'light' : 'dark';
-      persistPreference(nextPref);
-      return nextPref;
-    });
-  }, [deviceColorScheme, persistPreference]);
+    const requested = requestedRef.current;
+    const current = requested === 'system' ? (deviceColorScheme === 'dark' ? 'dark' : 'light') : requested;
+    setPreference(current === 'dark' ? 'light' : 'dark');
+  }, [deviceColorScheme, setPreference]);
 
   const value = useMemo<ThemeContextValue>(
     () => ({

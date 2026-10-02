@@ -4,6 +4,10 @@ import { useTheme } from '../../theme';
 
 export interface SectionHeaderProps {
   title: string;
+  /** `title` is a screen-section heading; `label` the small caption above a grouped list. */
+  variant?: 'title' | 'label';
+  /** Overrides the text colour (e.g. the danger-zone label). */
+  color?: string;
   /** Optional trailing element, e.g. a small icon or a link. */
   trailing?: React.ReactNode;
   style?: StyleProp<ViewStyle>;
@@ -11,14 +15,26 @@ export interface SectionHeaderProps {
 }
 
 /** Title row for a block of content. */
-export function SectionHeader({ title, trailing, style, testID }: SectionHeaderProps) {
+export function SectionHeader({
+  title,
+  variant = 'title',
+  color,
+  trailing,
+  style,
+  testID,
+}: SectionHeaderProps) {
   const { theme } = useTheme();
+  const isLabel = variant === 'label';
 
   return (
-    <View style={[styles.row, style]} testID={testID}>
+    <View style={[styles.row, isLabel && styles.labelRow, style]} testID={testID}>
       <Text
         accessibilityRole="header"
-        style={[theme.typography.h2, styles.title, { color: theme.colors.text }]}
+        style={[
+          isLabel ? theme.typography.smallMedium : theme.typography.h2,
+          styles.title,
+          { color: color ?? (isLabel ? theme.colors.textSecondary : theme.colors.text) },
+        ]}
       >
         {title}
       </Text>
@@ -33,6 +49,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     marginBottom: 12,
+  },
+  labelRow: {
+    marginBottom: 8,
+    paddingHorizontal: 4,
   },
   title: {
     flexShrink: 1,

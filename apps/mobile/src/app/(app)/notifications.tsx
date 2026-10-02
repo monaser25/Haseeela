@@ -7,7 +7,6 @@ import {
   RefreshControl,
   ActivityIndicator,
   StyleSheet,
-  I18nManager,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import {
@@ -36,7 +35,7 @@ import {
 export default function NotificationsScreen() {
   const router = useRouter();
   const { theme } = useTheme();
-  const { t } = useI18n();
+  const { t, isRTL } = useI18n();
   const { user, status: authStatus } = useAuth();
   const isOnline = useIsOnline();
 
@@ -313,7 +312,7 @@ export default function NotificationsScreen() {
   const isMarkAllDisabled = isBusy || unreadCount === 0;
 
   return (
-    <ScreenContainer testID="notifications-screen" edges={['top', 'left', 'right']}>
+    <ScreenContainer testID="notifications-screen" edges={['top', 'left', 'right']} scrollable={false} padded={false}>
       {/* Header */}
       <View style={styles.header}>
         <Pressable
@@ -327,7 +326,7 @@ export default function NotificationsScreen() {
           <ArrowLeft
             size={22}
             color={theme.colors.text}
-            style={I18nManager.isRTL ? { transform: [{ scaleX: -1 }] } : undefined}
+            style={isRTL ? { transform: [{ scaleX: -1 }] } : undefined}
           />
         </Pressable>
 

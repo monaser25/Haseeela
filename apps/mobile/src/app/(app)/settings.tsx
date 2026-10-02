@@ -8,7 +8,6 @@ import {
   Modal,
   ActivityIndicator,
   StyleSheet,
-  I18nManager,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import {
@@ -23,7 +22,6 @@ import {
   Globe,
   Calendar,
   FileText,
-  ChevronRight,
   AlertCircle,
   Check,
   Trash2,
@@ -35,12 +33,21 @@ import { useAuth } from '../../auth';
 import { getSessionEpoch, getCurrentAuthUserId } from '../../auth/authScope';
 import { usePreferences, useUpdatePreferences } from '../../api';
 import { useIsOnline } from '../../query';
-import { Button, Banner, ScreenContainer } from '../../components/ui';
+import {
+  Button,
+  Banner,
+  Chevron,
+  ListGroup,
+  ListRow,
+  ScreenContainer,
+  SectionHeader,
+} from '../../components/ui';
+import { SegmentedSetting } from '../../components/settings/SegmentedSetting';
 
 export default function SettingsScreen() {
   const router = useRouter();
   const { theme, preference, setPreference, isDark } = useTheme();
-  const { t, locale, setLocale } = useI18n();
+  const { t, locale, setLocale, isRTL } = useI18n();
   const { user, signOut, status: authStatus } = useAuth();
   const isOnline = useIsOnline();
 
@@ -296,7 +303,7 @@ export default function SettingsScreen() {
   const isServerWriteDisabled = isBusy;
 
   return (
-    <ScreenContainer testID="settings-screen" edges={['top', 'left', 'right']}>
+    <ScreenContainer testID="settings-screen" edges={['top', 'left', 'right']} scrollable={false} padded={false}>
       {/* Header */}
       <View style={styles.header}>
         <Pressable
@@ -310,7 +317,7 @@ export default function SettingsScreen() {
           <ArrowLeft
             size={22}
             color={theme.colors.text}
-            style={I18nManager.isRTL ? { transform: [{ scaleX: -1 }] } : undefined}
+            style={isRTL ? { transform: [{ scaleX: -1 }] } : undefined}
           />
         </Pressable>
         <Text
@@ -359,467 +366,175 @@ export default function SettingsScreen() {
           </View>
         ) : null}
 
-        {/* 1. Account Section */}
-        <Text style={[styles.sectionHeader, { color: theme.colors.textSecondary }]}>
-          {t('settings.section.account')}
-        </Text>
-        <View
-          style={[
-            styles.listCard,
-            {
-              backgroundColor: theme.colors.surface,
-              borderColor: theme.colors.border,
-              borderRadius: theme.radius.lg,
-            },
-          ]}
-        >
-          {/* Email row (Read-only) */}
-          <View style={[styles.listRow, { borderBottomColor: theme.colors.border }]}>
-            <View style={[styles.iconWrap, { backgroundColor: theme.colors.infoTint }]}>
-              <Mail size={18} color={theme.colors.info} />
-            </View>
-            <View style={styles.rowBody}>
-              <Text style={[theme.typography.bodySemiBold, { color: theme.colors.text }]}>
-                {t('profile.label.email')}
-              </Text>
-            </View>
-            <Text
-              style={[theme.typography.body, { color: theme.colors.textSecondary }]}
-              testID="settings-user-email"
-              numberOfLines={1}
-            >
-              {user?.email || '—'}
-            </Text>
-          </View>
-
-          {/* Profile row */}
-          <Pressable
-            testID="settings-profile-link"
-            accessibilityRole="button"
-            accessibilityLabel={t('settings.action.profile')}
-            onPress={() => router.push('/(app)/profile' as any)}
-            style={({ pressed }) => [
-              styles.listRow,
-              {
-                borderBottomColor: theme.colors.border,
-                backgroundColor: pressed ? theme.colors.surfaceHover : 'transparent',
-              },
-            ]}
-          >
-            <View style={[styles.iconWrap, { backgroundColor: theme.colors.accentTint }]}>
-              <UserIcon size={18} color={theme.colors.accent} />
-            </View>
-            <View style={styles.rowBody}>
-              <Text style={[theme.typography.bodySemiBold, { color: theme.colors.text }]}>
-                {t('settings.action.profile')}
-              </Text>
-            </View>
-            <ChevronRight
-              size={18}
-              color={theme.colors.textMuted}
-              style={I18nManager.isRTL ? { transform: [{ scaleX: -1 }] } : undefined}
+        {/* 1. Account */}
+        <View>
+          <SectionHeader variant="label" title={t('settings.section.account')} />
+          <ListGroup>
+            <ListRow
+              icon={Mail}
+              iconTone="info"
+              title={t('profile.label.email')}
+              trailing={
+                <Text
+                  style={[theme.typography.body, styles.emailValue, { color: theme.colors.textSecondary }]}
+                  testID="settings-user-email"
+                  numberOfLines={1}
+                >
+                  {user?.email || '—'}
+                </Text>
+              }
             />
-          </Pressable>
-
-          {/* Log out row */}
-          <Pressable
-            testID="settings-logout-button"
-            accessibilityRole="button"
-            accessibilityLabel={t('settings.action.logout')}
-            onPress={handleSignOut}
-            disabled={isBusy}
-            style={({ pressed }) => [
-              styles.listRow,
-              {
-                borderBottomWidth: 0,
-                backgroundColor: pressed ? theme.colors.surfaceHover : 'transparent',
-                opacity: isBusy ? 0.6 : 1,
-              },
-            ]}
-          >
-            <View style={[styles.iconWrap, { backgroundColor: theme.colors.negativeTint }]}>
-              <LogOut size={18} color={theme.colors.negative} />
-            </View>
-            <View style={styles.rowBody}>
-              <Text style={[theme.typography.bodySemiBold, { color: theme.colors.negative }]}>
-                {t('settings.action.logout')}
-              </Text>
-            </View>
-            {isSigningOut ? (
-              <ActivityIndicator size="small" color={theme.colors.negative} />
-            ) : null}
-          </Pressable>
+            <ListRow
+              testID="settings-profile-link"
+              icon={UserIcon}
+              iconTone="accent"
+              title={t('settings.action.profile')}
+              onPress={() => router.push('/(app)/profile' as any)}
+            />
+            <ListRow
+              testID="settings-logout-button"
+              icon={LogOut}
+              danger
+              title={t('settings.action.logout')}
+              disabled={isBusy}
+              onPress={handleSignOut}
+              trailing={
+                isSigningOut ? (
+                  <ActivityIndicator size="small" color={theme.colors.negativeText} />
+                ) : undefined
+              }
+            />
+          </ListGroup>
         </View>
 
-        {/* 2. Workspace Section */}
-        <Text style={[styles.sectionHeader, { color: theme.colors.textSecondary }]}>
-          {t('settings.section.workspace')}
-        </Text>
-        <View
-          style={[
-            styles.listCard,
-            {
-              backgroundColor: theme.colors.surface,
-              borderColor: theme.colors.border,
-              borderRadius: theme.radius.lg,
-            },
-          ]}
-        >
-          {/* Currency row */}
-          <Pressable
-            testID="settings-currency-row"
-            accessibilityRole="button"
-            accessibilityLabel={t('settings.label.currency')}
-            onPress={handleOpenCurrencyModal}
-            style={({ pressed }) => [
-              styles.listRow,
-              {
-                borderBottomColor: theme.colors.border,
-                backgroundColor: pressed ? theme.colors.surfaceHover : 'transparent',
-              },
-            ]}
-          >
-            <View style={[styles.iconWrap, { backgroundColor: theme.colors.positiveTint }]}>
-              <DollarSign size={18} color={theme.colors.positive} />
-            </View>
-            <View style={styles.rowBody}>
-              <Text style={[theme.typography.bodySemiBold, { color: theme.colors.text }]}>
-                {t('settings.label.currency')}
-              </Text>
-            </View>
-            <Text
-              style={[
-                theme.typography.bodySemiBold,
-                { color: theme.colors.textSecondary, marginEnd: 6 },
-              ]}
-              testID="settings-currency-display"
-            >
-              {activeCurrency}
-            </Text>
-            <ChevronRight
-              size={18}
-              color={theme.colors.textMuted}
-              style={I18nManager.isRTL ? { transform: [{ scaleX: -1 }] } : undefined}
-            />
-          </Pressable>
-
-          {/* Accounting mode row (read-only cash basis) */}
-          <View style={[styles.listRow, { borderBottomWidth: 0 }]}>
-            <View style={[styles.iconWrap, { backgroundColor: theme.colors.accentTint }]}>
-              <Layers size={18} color={theme.colors.accent} />
-            </View>
-            <View style={styles.rowBody}>
-              <Text style={[theme.typography.bodySemiBold, { color: theme.colors.text }]}>
-                {t('settings.label.accountingMode')}
-              </Text>
-            </View>
-            <Text
-              style={[theme.typography.body, { color: theme.colors.textMuted }]}
-              testID="settings-accounting-mode"
-            >
-              {t('settings.option.cashBasis')}
-            </Text>
-          </View>
-        </View>
-
-        {/* 3. Appearance Section */}
-        <Text style={[styles.sectionHeader, { color: theme.colors.textSecondary }]}>
-          {t('settings.section.appearance')}
-        </Text>
-        <View
-          style={[
-            styles.listCard,
-            {
-              backgroundColor: theme.colors.surface,
-              borderColor: theme.colors.border,
-              borderRadius: theme.radius.lg,
-            },
-          ]}
-        >
-          {/* Theme row */}
-          <View style={[styles.listRow, { borderBottomColor: theme.colors.border }]}>
-            <View
-              style={[
-                styles.iconWrap,
-                {
-                  backgroundColor: isDark
-                    ? theme.colors.accentTint
-                    : theme.colors.warningTint,
-                },
-              ]}
-            >
-              {isDark ? (
-                <Moon size={18} color={theme.colors.accent} />
-              ) : (
-                <Sun size={18} color={theme.colors.warning} />
-              )}
-            </View>
-            <View style={styles.rowBody}>
-              <Text style={[theme.typography.bodySemiBold, { color: theme.colors.text }]}>
-                {t('settings.section.appearance')}
-              </Text>
-            </View>
-          </View>
-
-          {/* Theme segmented control */}
-          <View style={styles.segmentedContainer}>
-            <View
-              style={[
-                styles.segmentedTrack,
-                {
-                  backgroundColor: theme.colors.surfaceHover,
-                  borderColor: theme.colors.border,
-                },
-              ]}
-            >
-              {(['system', 'light', 'dark'] as ColorSchemePreference[]).map((mode) => {
-                const isSelected = preference === mode;
-                const label =
-                  mode === 'system'
-                    ? t('settings.theme.system')
-                    : mode === 'light'
-                    ? t('settings.theme.light')
-                    : t('settings.theme.dark');
-
-                return (
-                  <Pressable
-                    key={mode}
-                    testID={`theme-seg-${mode}`}
-                    accessibilityRole="button"
-                    accessibilityState={{ selected: isSelected }}
-                    onPress={() => setPreference(mode)}
-                    style={[
-                      styles.segmentedItem,
-                      isSelected && {
-                        backgroundColor: theme.colors.surface,
-                        borderColor: theme.colors.border,
-                        shadowColor: '#000',
-                        shadowOffset: { width: 0, height: 1 },
-                        shadowOpacity: 0.1,
-                        shadowRadius: 2,
-                        elevation: 2,
-                      },
-                    ]}
+        {/* 2. Workspace */}
+        <View>
+          <SectionHeader variant="label" title={t('settings.section.workspace')} />
+          <ListGroup>
+            <ListRow
+              testID="settings-currency-row"
+              icon={DollarSign}
+              iconTone="positive"
+              title={t('settings.label.currency')}
+              onPress={handleOpenCurrencyModal}
+              trailing={
+                <View style={styles.valueWithChevron}>
+                  <Text
+                    style={[theme.typography.bodySemiBold, { color: theme.colors.textSecondary }]}
+                    testID="settings-currency-display"
                   >
-                    <Text
-                      style={[
-                        theme.typography.caption,
-                        styles.segmentedText,
-                        {
-                          color: isSelected ? theme.colors.text : theme.colors.textSecondary,
-                          fontWeight: isSelected ? '600' : '500',
-                        },
-                      ]}
-                    >
-                      {label}
-                    </Text>
-                  </Pressable>
-                );
-              })}
-            </View>
-          </View>
-
-          {/* Language row */}
-          <View style={[styles.listRow, { borderBottomColor: theme.colors.border }]}>
-            <View style={[styles.iconWrap, { backgroundColor: theme.colors.accentTint }]}>
-              <Globe size={18} color={theme.colors.accent} />
-            </View>
-            <View style={styles.rowBody}>
-              <Text style={[theme.typography.bodySemiBold, { color: theme.colors.text }]}>
-                {t('settings.label.language')}
-              </Text>
-            </View>
-          </View>
-
-          {/* Language segmented control */}
-          <View style={styles.segmentedContainer}>
-            <View
-              style={[
-                styles.segmentedTrack,
-                {
-                  backgroundColor: theme.colors.surfaceHover,
-                  borderColor: theme.colors.border,
-                },
-              ]}
-            >
-              {[
-                { code: 'ar' as const, label: 'العربية' },
-                { code: 'en' as const, label: 'English' },
-              ].map((lang) => {
-                const isSelected = locale === lang.code;
-
-                return (
-                  <Pressable
-                    key={lang.code}
-                    testID={`lang-seg-${lang.code}`}
-                    accessibilityRole="button"
-                    accessibilityState={{ selected: isSelected }}
-                    onPress={() => setLocale(lang.code)}
-                    style={[
-                      styles.segmentedItem,
-                      isSelected && {
-                        backgroundColor: theme.colors.surface,
-                        borderColor: theme.colors.border,
-                        shadowColor: '#000',
-                        shadowOffset: { width: 0, height: 1 },
-                        shadowOpacity: 0.1,
-                        shadowRadius: 2,
-                        elevation: 2,
-                      },
-                    ]}
-                  >
-                    <Text
-                      style={[
-                        theme.typography.caption,
-                        styles.segmentedText,
-                        {
-                          color: isSelected ? theme.colors.text : theme.colors.textSecondary,
-                          fontWeight: isSelected ? '600' : '500',
-                        },
-                      ]}
-                    >
-                      {lang.label}
-                    </Text>
-                  </Pressable>
-                );
-              })}
-            </View>
-          </View>
+                    {activeCurrency}
+                  </Text>
+                  <Chevron size={18} color={theme.colors.textMuted} />
+                </View>
+              }
+            />
+            <ListRow
+              icon={Layers}
+              iconTone="accent"
+              title={t('settings.label.accountingMode')}
+              trailing={
+                <Text
+                  style={[theme.typography.body, { color: theme.colors.textMuted }]}
+                  testID="settings-accounting-mode"
+                >
+                  {t('settings.option.cashBasis')}
+                </Text>
+              }
+            />
+          </ListGroup>
         </View>
 
-        {/* 4. Notifications Section */}
-        <Text style={[styles.sectionHeader, { color: theme.colors.textSecondary }]}>
-          {t('settings.section.notifications')}
-        </Text>
-        <View
-          style={[
-            styles.listCard,
-            {
-              backgroundColor: theme.colors.surface,
-              borderColor: theme.colors.border,
-              borderRadius: theme.radius.lg,
-            },
-          ]}
-        >
-          {/* Billing reminders */}
-          <View style={[styles.listRow, { borderBottomColor: theme.colors.border }]}>
-            <View style={[styles.iconWrap, { backgroundColor: theme.colors.warningTint }]}>
-              <Calendar size={18} color={theme.colors.warning} />
-            </View>
-            <View style={styles.rowBody}>
-              <Text style={[theme.typography.bodySemiBold, { color: theme.colors.text }]}>
-                {t('settings.label.billingReminders')}
-              </Text>
-              <Text
-                style={[
-                  theme.typography.caption,
-                  { color: theme.colors.textSecondary, marginTop: 2 },
-                ]}
-              >
-                {t('settings.hint.billingReminders')}
-              </Text>
-            </View>
-            <Switch
-              testID="toggle-billing-reminders"
-              accessibilityLabel={t('settings.label.billingReminders')}
-              value={preferences?.notifyBillingReminders ?? true}
-              onValueChange={handleToggleBillingReminders}
-              disabled={isServerWriteDisabled}
-              trackColor={{
-                false: theme.colors.surfaceHover,
-                true: theme.colors.accent,
-              }}
-              thumbColor="#FFFFFF"
+        {/* 3. Appearance: theme + language */}
+        <View>
+          <SectionHeader variant="label" title={t('settings.section.appearance')} />
+          <ListGroup>
+            <SegmentedSetting
+              icon={isDark ? Moon : Sun}
+              iconTone={isDark ? 'accent' : 'warning'}
+              title={t('settings.section.appearance')}
+              value={preference}
+              onChange={setPreference}
+              options={[
+                { value: 'system', label: t('settings.theme.system'), testID: 'theme-seg-system' },
+                { value: 'light', label: t('settings.theme.light'), testID: 'theme-seg-light' },
+                { value: 'dark', label: t('settings.theme.dark'), testID: 'theme-seg-dark' },
+              ]}
             />
-          </View>
+            <SegmentedSetting
+              icon={Globe}
+              iconTone="accent"
+              title={t('settings.label.language')}
+              value={locale}
+              onChange={setLocale}
+              options={[
+                { value: 'ar', label: 'العربية', testID: 'lang-seg-ar' },
+                { value: 'en', label: 'English', testID: 'lang-seg-en' },
+              ]}
+            />
+          </ListGroup>
+        </View>
 
-          {/* Invoice due alerts */}
-          <View style={[styles.listRow, { borderBottomWidth: 0 }]}>
-            <View style={[styles.iconWrap, { backgroundColor: theme.colors.infoTint }]}>
-              <FileText size={18} color={theme.colors.info} />
-            </View>
-            <View style={styles.rowBody}>
-              <Text style={[theme.typography.bodySemiBold, { color: theme.colors.text }]}>
-                {t('settings.label.invoiceAlerts')}
-              </Text>
-              <Text
-                style={[
-                  theme.typography.caption,
-                  { color: theme.colors.textSecondary, marginTop: 2 },
-                ]}
-              >
-                {t('settings.hint.invoiceAlerts')}
-              </Text>
-            </View>
-            <Switch
-              testID="toggle-invoice-alerts"
-              accessibilityLabel={t('settings.label.invoiceAlerts')}
-              value={preferences?.notifyInvoiceDue ?? true}
-              onValueChange={handleToggleInvoiceDue}
-              disabled={isServerWriteDisabled}
-              trackColor={{
-                false: theme.colors.surfaceHover,
-                true: theme.colors.accent,
-              }}
-              thumbColor="#FFFFFF"
+        {/* 4. Notifications */}
+        <View>
+          <SectionHeader variant="label" title={t('settings.section.notifications')} />
+          <ListGroup>
+            <ListRow
+              icon={Calendar}
+              iconTone="warning"
+              title={t('settings.label.billingReminders')}
+              subtitle={t('settings.hint.billingReminders')}
+              trailing={
+                <Switch
+                  testID="toggle-billing-reminders"
+                  accessibilityLabel={t('settings.label.billingReminders')}
+                  value={preferences?.notifyBillingReminders ?? true}
+                  onValueChange={handleToggleBillingReminders}
+                  disabled={isServerWriteDisabled}
+                  trackColor={{ false: theme.colors.borderStrong, true: theme.colors.accent }}
+                  thumbColor="#FFFFFF"
+                />
+              }
             />
-          </View>
+            <ListRow
+              icon={FileText}
+              iconTone="info"
+              title={t('settings.label.invoiceAlerts')}
+              subtitle={t('settings.hint.invoiceAlerts')}
+              trailing={
+                <Switch
+                  testID="toggle-invoice-alerts"
+                  accessibilityLabel={t('settings.label.invoiceAlerts')}
+                  value={preferences?.notifyInvoiceDue ?? true}
+                  onValueChange={handleToggleInvoiceDue}
+                  disabled={isServerWriteDisabled}
+                  trackColor={{ false: theme.colors.borderStrong, true: theme.colors.accent }}
+                  thumbColor="#FFFFFF"
+                />
+              }
+            />
+          </ListGroup>
         </View>
 
         {/* 5. Danger zone */}
-        <Text
-          testID="settings-danger-header"
-          style={[styles.sectionHeader, { color: theme.colors.negativeText }]}
-        >
-          {t('settings.section.danger')}
-        </Text>
-        <View
-          style={[
-            styles.listCard,
-            {
-              backgroundColor: theme.colors.surface,
-              borderColor: theme.colors.negative,
-              borderRadius: theme.radius.lg,
-            },
-          ]}
-        >
-          <Pressable
-            testID="settings-delete-account-link"
-            accessibilityRole="button"
-            accessibilityLabel={t('profile.action.deleteAccount')}
-            onPress={() => router.push('/(app)/delete-account' as never)}
-            disabled={isSigningOut}
-            style={({ pressed }) => [
-              styles.listRow,
-              {
-                borderBottomWidth: 0,
-                backgroundColor: pressed ? theme.colors.surfaceHover : 'transparent',
-                opacity: isSigningOut ? 0.6 : 1,
-              },
-            ]}
-          >
-            <View style={[styles.iconWrap, { backgroundColor: theme.colors.negativeTint }]}>
-              <Trash2 size={18} color={theme.colors.negativeText} />
-            </View>
-            <View style={styles.rowBody}>
-              <Text style={[theme.typography.bodySemiBold, { color: theme.colors.negativeText }]}>
-                {t('profile.action.deleteAccount')}
-              </Text>
-              <Text
-                style={[
-                  theme.typography.caption,
-                  { color: theme.colors.textSecondary, marginTop: 2 },
-                ]}
-              >
-                {t('profile.section.deleteSub')}
-              </Text>
-            </View>
-            <ChevronRight
-              size={18}
-              color={theme.colors.textMuted}
-              style={I18nManager.isRTL ? { transform: [{ scaleX: -1 }] } : undefined}
+        <View>
+          <SectionHeader
+            variant="label"
+            testID="settings-danger-header"
+            color={theme.colors.negativeText}
+            title={t('settings.section.danger')}
+          />
+          <ListGroup style={{ borderColor: `${theme.colors.negative}47` }}>
+            <ListRow
+              testID="settings-delete-account-link"
+              icon={Trash2}
+              danger
+              title={t('profile.action.deleteAccount')}
+              subtitle={t('profile.section.deleteSub')}
+              disabled={isSigningOut}
+              onPress={() => router.push('/(app)/delete-account' as never)}
             />
-          </Pressable>
+          </ListGroup>
         </View>
       </ScrollView>
 
@@ -976,65 +691,19 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: 16,
     paddingBottom: 32,
-    gap: 12,
+    gap: 20,
   },
   bannerWrapper: {
     marginBottom: 4,
   },
-  sectionHeader: {
-    fontSize: 12,
-    fontWeight: '600',
-    textTransform: 'uppercase',
-    letterSpacing: 0.6,
-    marginTop: 10,
-    marginBottom: 2,
-    paddingHorizontal: 4,
+  emailValue: {
+    flexShrink: 1,
+    maxWidth: '60%',
   },
-  listCard: {
-    borderWidth: 1,
-    overflow: 'hidden',
-  },
-  listRow: {
+  valueWithChevron: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    minHeight: 52,
-    borderBottomWidth: 1,
-  },
-  iconWrap: {
-    width: 32,
-    height: 32,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginEnd: 12,
-  },
-  rowBody: {
-    flex: 1,
-    marginEnd: 8,
-  },
-  segmentedContainer: {
-    paddingHorizontal: 16,
-    paddingBottom: 14,
-  },
-  segmentedTrack: {
-    flexDirection: 'row',
-    borderWidth: 1,
-    borderRadius: 8,
-    padding: 3,
-    gap: 4,
-  },
-  segmentedItem: {
-    flex: 1,
-    paddingVertical: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 6,
-    minHeight: 36,
-  },
-  segmentedText: {
-    fontSize: 13,
+    gap: 6,
   },
   loadingContainer: {
     flex: 1,

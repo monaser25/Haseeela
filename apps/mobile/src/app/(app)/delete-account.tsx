@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, ScrollView, Pressable, StyleSheet, I18nManager } from 'react-native';
+import { View, Text, ScrollView, Pressable, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ArrowLeft, AlertTriangle } from 'lucide-react-native';
 import { useTheme } from '../../theme';
@@ -14,7 +14,7 @@ import { Button, Banner, TextField, ScreenContainer } from '../../components/ui'
 export default function DeleteAccountScreen() {
   const router = useRouter();
   const { theme } = useTheme();
-  const { t } = useI18n();
+  const { t, isRTL } = useI18n();
   const { user, signOut } = useAuth();
   const isOnline = useIsOnline();
 
@@ -103,7 +103,7 @@ export default function DeleteAccountScreen() {
   };
 
   return (
-    <ScreenContainer testID="delete-account-screen" edges={['top', 'left', 'right']}>
+    <ScreenContainer testID="delete-account-screen" edges={['top', 'left', 'right']} scrollable={false} padded={false}>
       <View style={styles.header}>
         <Pressable
           testID="delete-account-back-button"
@@ -117,7 +117,7 @@ export default function DeleteAccountScreen() {
           <ArrowLeft
             size={22}
             color={theme.colors.text}
-            style={I18nManager.isRTL ? { transform: [{ scaleX: -1 }] } : undefined}
+            style={isRTL ? { transform: [{ scaleX: -1 }] } : undefined}
           />
         </Pressable>
         <Text
