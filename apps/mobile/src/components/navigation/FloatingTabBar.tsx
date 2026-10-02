@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { View, Text, I18nManager, StyleSheet, LayoutChangeEvent } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import { Home, Receipt, Users, Menu } from 'lucide-react-native';
@@ -9,7 +9,11 @@ import {
   TAB_BAR_HEIGHT,
   TAB_BAR_MARGIN_X,
   tabBarBottomPadding,
+  CENTER_SLOT,
+  slotFor,
+  calculateSlotLayout,
 } from './tabBarMetrics';
+import { useTabSwipe } from './TabSwipeContext';
 
 type TabIcon = React.ComponentType<{ size?: number; color?: string; strokeWidth?: number }>;
 
@@ -19,9 +23,6 @@ const ICONS: Record<string, TabIcon> = {
   clients: Users,
   more: Menu,
 };
-
-/** The center slot is reserved for the floating action button. */
-const CENTER_SLOT = 2;
 
 interface TabRoute {
   key: string;
@@ -42,11 +43,6 @@ export interface FloatingTabBarProps {
     };
     navigate: (name: string, params?: object) => void;
   };
-}
-
-/** Slot index of a route once the center FAB slot is accounted for. */
-function slotFor(routeIndex: number): number {
-  return routeIndex >= CENTER_SLOT ? routeIndex + 1 : routeIndex;
 }
 
 interface TabItemProps {
@@ -99,32 +95,103 @@ function TabItem({ name, label, accessibilityLabel, focused, onPress }: TabItemP
 
 /**
  * Floating pill tab bar. It sits in the layout flow (not absolutely positioned) so screen content
- * never hides behind it. An accent pill springs between the slots; slot 2 is left open for the FAB.
+ * never hides behind it. An accent pill springs between the measured item layouts; slot 2 is left open for the FAB.
  */
 export function FloatingTabBar({ state, descriptors, navigation }: FloatingTabBarProps) {
   const { theme } = useTheme();
   const insets = useSafeAreaInsets();
   const reduceMotion = useReduceMotion();
+  const tabSwipe = useTabSwipe();
   const [barWidth, setBarWidth] = useState(0);
+  const [itemLayouts, setItemLayouts] = useState<Record<number, { x: number; width: number }>>({});
 
-  const slotCount = state.routes.length + 1;
-  const slotWidth = barWidth / slotCount;
-  const direction = I18nManager.isRTL ? -1 : 1;
+  const slotCount = state.routes.length + 1; // 4 routes + 1 center FAB slot = 5 slots
+  const activeSlot = slotFor(state.index);
 
-  const pill = useSharedValue(slotFor(state.index));
+  // Fallback layout when onLayout has not yet fired (e.g. initial render or tests)
+  const getSlotLayout = useCallback(
+    (slot: number) => {
+      if (itemLayouts[slot]) {
+        return itemLayouts[slot];
+      }
+      return calculateSlotLayout(slot, barWidth, slotCount, I18nManager.isRTL);
+    },
+    [itemLayouts, barWidth, slotCount]
+  );
 
+  const activeLayout = getSlotLayout(activeSlot);
+
+  // Shared values tracking the pill position and width
+  const pillX = useSharedValue(activeLayout.x);
+  const pillWidth = useSharedValue(activeLayout.width);
+
+  // Arrays of slot coordinates exposed to Reanimated worklets for continuous swipe tracking
+  const slotXArray = useSharedValue<number[]>([0, 0, 0, 0, 0]);
+  const slotWArray = useSharedValue<number[]>([0, 0, 0, 0, 0]);
+
+  // Update worklet slot coordinates whenever layouts or barWidth update
   useEffect(() => {
-    const target = slotFor(state.index);
-    pill.value = reduceMotion ? target : withSpring(target, theme.motion.spring.snappy);
-  }, [state.index, reduceMotion, pill, theme.motion.spring.snappy]);
+    const xs: number[] = [];
+    const ws: number[] = [];
+    for (let s = 0; s < slotCount; s++) {
+      const l = getSlotLayout(s);
+      xs.push(l.x);
+      ws.push(l.width);
+    }
+    slotXArray.value = xs;
+    slotWArray.value = ws;
+  }, [slotCount, getSlotLayout, slotXArray, slotWArray]);
 
-  const pillStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: direction * pill.value * slotWidth }],
-  }));
+  // Spring pill to active slot layout on index change or layout change (when not dragging)
+  useEffect(() => {
+    if (tabSwipe?.isSwiping.value) {
+      return;
+    }
+    const layout = getSlotLayout(activeSlot);
+    if (layout.width > 0) {
+      pillX.value = reduceMotion ? layout.x : withSpring(layout.x, theme.motion.spring.snappy);
+      pillWidth.value = reduceMotion ? layout.width : withSpring(layout.width, theme.motion.spring.snappy);
+    }
+  }, [activeSlot, getSlotLayout, reduceMotion, pillX, pillWidth, theme.motion.spring.snappy, tabSwipe]);
 
-  const handleLayout = (event: LayoutChangeEvent) => {
+  const pillStyle = useAnimatedStyle(() => {
+    if (tabSwipe && tabSwipe.isSwiping.value) {
+      const progress = tabSwipe.swipeProgress.value;
+      const target = tabSwipe.targetSlot.value;
+      if (target >= 0 && target !== activeSlot) {
+        const fromX = slotXArray.value[activeSlot] ?? pillX.value;
+        const toX = slotXArray.value[target] ?? fromX;
+        const fromW = slotWArray.value[activeSlot] ?? pillWidth.value;
+        const toW = slotWArray.value[target] ?? fromW;
+        const p = Math.abs(progress);
+        return {
+          transform: [{ translateX: fromX + p * (toX - fromX) }],
+          width: fromW + p * (toW - fromW),
+        };
+      }
+    }
+    return {
+      transform: [{ translateX: pillX.value }],
+      width: pillWidth.value,
+    };
+  });
+
+  const handleBarLayout = (event: LayoutChangeEvent) => {
     setBarWidth(event.nativeEvent.layout.width);
   };
+
+  const recordSlotLayout = useCallback((slot: number, event: LayoutChangeEvent) => {
+    const { x, width } = event.nativeEvent.layout;
+    setItemLayouts((prev) => {
+      const existing = prev[slot];
+      if (existing && Math.abs(existing.x - x) < 0.5 && Math.abs(existing.width - width) < 0.5) {
+        return prev;
+      }
+      return { ...prev, [slot]: { x, width } };
+    });
+  }, []);
+
+  const effectivePillWidth = activeLayout.width > 0 ? activeLayout.width : barWidth > 0 ? barWidth / slotCount : 0;
 
   return (
     <View
@@ -135,7 +202,7 @@ export function FloatingTabBar({ state, descriptors, navigation }: FloatingTabBa
     >
       <View
         accessibilityRole="tablist"
-        onLayout={handleLayout}
+        onLayout={handleBarLayout}
         style={[
           styles.bar,
           {
@@ -146,13 +213,14 @@ export function FloatingTabBar({ state, descriptors, navigation }: FloatingTabBa
           theme.shadows.md,
         ]}
       >
-        {barWidth > 0 ? (
+        {barWidth > 0 || effectivePillWidth > 0 ? (
           <Animated.View
             pointerEvents="none"
+            testID="floating-tab-bar-pill"
             style={[
               styles.pill,
               {
-                width: slotWidth,
+                width: effectivePillWidth,
                 backgroundColor: theme.colors.accentTint,
                 borderRadius: theme.radius.xl,
               },
@@ -165,6 +233,7 @@ export function FloatingTabBar({ state, descriptors, navigation }: FloatingTabBa
           const { options } = descriptors[route.key];
           const label = options.title ?? route.name;
           const focused = state.index === index;
+          const slot = slotFor(index);
 
           const onPress = () => {
             const event = navigation.emit({
@@ -179,14 +248,24 @@ export function FloatingTabBar({ state, descriptors, navigation }: FloatingTabBa
 
           return (
             <React.Fragment key={route.key}>
-              {index === CENTER_SLOT ? <View style={styles.centerSlot} /> : null}
-              <TabItem
-                name={route.name}
-                label={label}
-                accessibilityLabel={options.tabBarAccessibilityLabel ?? label}
-                focused={focused}
-                onPress={onPress}
-              />
+              {index === CENTER_SLOT ? (
+                <View
+                  style={styles.centerSlot}
+                  onLayout={(e) => recordSlotLayout(CENTER_SLOT, e)}
+                />
+              ) : null}
+              <View
+                style={styles.slotWrapper}
+                onLayout={(e) => recordSlotLayout(slot, e)}
+              >
+                <TabItem
+                  name={route.name}
+                  label={label}
+                  accessibilityLabel={options.tabBarAccessibilityLabel ?? label}
+                  focused={focused}
+                  onPress={onPress}
+                />
+              </View>
             </React.Fragment>
           );
         })}
@@ -208,12 +287,16 @@ const styles = StyleSheet.create({
   },
   pill: {
     position: 'absolute',
-    start: 0,
+    left: 0,
     top: 6,
     bottom: 6,
   },
-  item: {
+  slotWrapper: {
     flex: 1,
+    height: '100%',
+  },
+  item: {
+    width: '100%',
     height: '100%',
     alignItems: 'center',
     justifyContent: 'center',
@@ -222,6 +305,7 @@ const styles = StyleSheet.create({
   },
   centerSlot: {
     flex: 1,
+    height: '100%',
   },
   label: {
     fontSize: 11,

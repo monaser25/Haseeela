@@ -22,13 +22,14 @@ import {
 } from 'lucide-react-native';
 import { useTheme } from '../../theme';
 import { useI18n } from '../../i18n';
-import { useOverview, usePreferences } from '../../api';
+import { useOverview, usePreferences, useArchiveSubscription } from '../../api';
 import { useIsOnline } from '../../query';
 import { Button, Banner, ScreenContainer } from '../../components/ui';
 import {
   SubscriptionBurdenCard,
   SubscriptionRow,
 } from '../../components/subscriptions';
+import { closeOpenSwipeables } from '../../components/motion';
 
 type CycleChip = 'ALL' | 'MONTHLY' | 'QUARTERLY' | 'YEARLY';
 
@@ -120,6 +121,15 @@ export default function SubscriptionsScreen() {
     [router]
   );
 
+  const archiveMutation = useArchiveSubscription();
+
+  const handleArchiveSubscription = useCallback(
+    (subscription: Subscription) => {
+      archiveMutation.mutate(subscription.id);
+    },
+    [archiveMutation]
+  );
+
   const keyExtractor = useCallback((item: Subscription) => item.id, []);
 
   const renderItem = useCallback(
@@ -128,10 +138,11 @@ export default function SubscriptionsScreen() {
         subscription={item}
         currency={currency}
         onPress={handleSubscriptionPress}
+        onArchive={isOnline ? handleArchiveSubscription : undefined}
         testID={`subscription-row-${item.id}`}
       />
     ),
-    [currency, handleSubscriptionPress]
+    [currency, handleSubscriptionPress, isOnline, handleArchiveSubscription]
   );
 
   const toggleArchive = useCallback(() => {
@@ -336,6 +347,7 @@ export default function SubscriptionsScreen() {
         keyExtractor={keyExtractor}
         renderItem={renderItem}
         keyboardShouldPersistTaps="handled"
+        onScrollBeginDrag={closeOpenSwipeables}
         initialNumToRender={12}
         windowSize={9}
         ListHeaderComponent={

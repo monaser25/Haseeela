@@ -103,6 +103,7 @@ jest.mock('expo-notifications', () => ({
 
 // Reanimated / worklets need native runtimes that do not exist under Jest. Use the libraries' own
 // JS mocks; layout animations (entering/exiting) become no-ops and shared values are plain objects.
+require('react-native-gesture-handler/jestSetup');
 jest.mock('react-native-worklets', () => require('react-native-worklets/src/mock'));
 // The library mock has no useReducedMotion. Default to "reduced motion on" so every component renders
 // its final state synchronously (no entering animations, no count-up) - existing assertions stay

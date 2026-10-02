@@ -22,11 +22,12 @@ import {
 } from 'lucide-react-native';
 import { useTheme } from '../../../theme';
 import { useI18n } from '../../../i18n';
-import { useOverview, usePreferences } from '../../../api';
+import { useOverview, usePreferences, useArchiveClient } from '../../../api';
 import { useIsOnline } from '../../../query';
 import { Button, Banner, ScreenContainer } from '../../../components/ui';
 import { ClientRow } from '../../../components/clients/ClientRow';
 import { ClientRevenueCard } from '../../../components/clients/ClientRevenueCard';
+import { closeOpenSwipeables } from '../../../components/motion';
 
 type ClientFilter = 'all' | 'active' | 'archived';
 
@@ -135,6 +136,15 @@ export default function ClientsScreen() {
     [router]
   );
 
+  const archiveClientMutation = useArchiveClient();
+
+  const handleArchiveClient = useCallback(
+    (client: Client) => {
+      archiveClientMutation.mutate(client.id);
+    },
+    [archiveClientMutation]
+  );
+
   const toggleArchiveFilter = useCallback(() => {
     setFilter((prev) => (prev === 'archived' ? 'active' : 'archived'));
   }, []);
@@ -148,10 +158,11 @@ export default function ClientsScreen() {
         currency={currency}
         totalPaid={clientRevenueMap.get(item.id) ?? 0}
         onPress={handleClientPress}
+        onArchive={isOnline ? handleArchiveClient : undefined}
         testID={`client-row-${item.id}`}
       />
     ),
-    [currency, clientRevenueMap, handleClientPress]
+    [currency, clientRevenueMap, handleClientPress, isOnline, handleArchiveClient]
   );
 
   // Loading skeleton when no cached data exists
@@ -267,6 +278,7 @@ export default function ClientsScreen() {
         keyExtractor={keyExtractor}
         renderItem={renderItem}
         keyboardShouldPersistTaps="handled"
+        onScrollBeginDrag={closeOpenSwipeables}
         initialNumToRender={12}
         windowSize={9}
         ListHeaderComponent={

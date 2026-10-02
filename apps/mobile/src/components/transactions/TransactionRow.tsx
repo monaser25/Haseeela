@@ -23,24 +23,28 @@ import { useTheme } from '../../theme';
 import { useI18n } from '../../i18n';
 import { parseCalendarDate } from '../../utils/calendarDate';
 import { IconTile } from '../ui';
-import { PressableScale } from '../motion';
+import { PressableScale, SwipeableRow } from '../motion';
 
 export interface TransactionRowProps {
   transaction: Transaction;
   currency: CurrencyCode;
   onPress: (transaction: Transaction) => void;
+  onDelete?: (transaction: Transaction) => void;
   onCompletePending?: (transaction: Transaction) => void;
   onRevertPending?: (transaction: Transaction) => void;
   showPendingActions?: boolean;
+  testID?: string;
 }
 
 function TransactionRowBase({
   transaction,
   currency,
   onPress,
+  onDelete,
   onCompletePending,
   onRevertPending,
   showPendingActions = false,
+  testID,
 }: TransactionRowProps) {
   const { theme } = useTheme();
   const { t, formatCurrency, formatDate } = useI18n();
@@ -85,9 +89,9 @@ function TransactionRowBase({
 
   const accessibilityLabel = `${title}, ${signedAmount}, ${formattedDate}, ${statusText}`;
 
-  return (
+  const rowContent = (
     <PressableScale
-      testID={`transaction-row-${transaction.id}`}
+      testID={testID ?? `transaction-row-${transaction.id}`}
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}
       onPress={() => onPress(transaction)}
@@ -249,18 +253,47 @@ function TransactionRowBase({
       </View>
     </PressableScale>
   );
+
+  return (
+    <SwipeableRow
+      enabled={Boolean(onDelete)}
+      action={
+        onDelete
+          ? {
+              type: 'delete',
+              label: t('transactions.actions.delete'),
+              isDestructive: true,
+              confirmTitle: t('transactions.delete.title'),
+              confirmMessage:
+                transaction.sourceType === 'manual'
+                  ? t('transactions.delete.descManual')
+                  : t('transactions.delete.descAuto'),
+              confirmText: t('transactions.delete.confirm'),
+              cancelText: t('transactions.delete.cancel'),
+              onPress: () => onDelete(transaction),
+              testID: `transaction-delete-${transaction.id}`,
+            }
+          : undefined
+      }
+      style={styles.swipeWrapper}
+    >
+      {rowContent}
+    </SwipeableRow>
+  );
 }
 
 export const TransactionRow = React.memo(TransactionRowBase);
 
 const styles = StyleSheet.create({
+  swipeWrapper: {
+    marginHorizontal: 16,
+    marginBottom: 8,
+  },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     minHeight: 68, // >= 44pt touch target
-    marginHorizontal: 16,
-    marginBottom: 8,
     paddingVertical: 12,
     paddingHorizontal: 14,
     borderWidth: StyleSheet.hairlineWidth,

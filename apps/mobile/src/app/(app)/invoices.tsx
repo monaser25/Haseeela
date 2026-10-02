@@ -21,13 +21,14 @@ import {
 } from 'lucide-react-native';
 import { useTheme } from '../../theme';
 import { useI18n } from '../../i18n';
-import { useInvoices, usePreferences } from '../../api';
+import { useInvoices, usePreferences, useDeleteInvoice } from '../../api';
 import { useIsOnline } from '../../query';
 import { Button, Banner, ScreenContainer } from '../../components/ui';
 import {
   InvoiceSummaryCards,
   InvoiceRow,
 } from '../../components/invoices';
+import { closeOpenSwipeables } from '../../components/motion';
 
 type FilterChip = 'ALL' | InvoiceStatus;
 
@@ -107,6 +108,15 @@ export default function InvoicesScreen() {
     [router]
   );
 
+  const deleteMutation = useDeleteInvoice();
+
+  const handleDeleteInvoice = useCallback(
+    (invoice: Invoice) => {
+      deleteMutation.mutate(invoice.id);
+    },
+    [deleteMutation]
+  );
+
   const keyExtractor = useCallback((item: Invoice) => item.id, []);
 
   const renderItem = useCallback(
@@ -115,11 +125,12 @@ export default function InvoicesScreen() {
         <InvoiceRow
           invoice={item}
           onPress={handleInvoicePress}
+          onDelete={isOnline ? handleDeleteInvoice : undefined}
           testID={`invoice-row-${item.id}`}
         />
       </View>
     ),
-    [handleInvoicePress]
+    [handleInvoicePress, isOnline, handleDeleteInvoice]
   );
 
   // Cold offline with empty cache
@@ -315,6 +326,7 @@ export default function InvoicesScreen() {
         keyExtractor={keyExtractor}
         renderItem={renderItem}
         keyboardShouldPersistTaps="handled"
+        onScrollBeginDrag={closeOpenSwipeables}
         initialNumToRender={12}
         windowSize={9}
         refreshControl={

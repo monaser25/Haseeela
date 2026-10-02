@@ -18,9 +18,10 @@ import {
 } from 'lucide-react-native';
 import { useTheme } from '../../../theme';
 import { useI18n } from '../../../i18n';
-import { useOverview, usePreferences, useCompletePendingPayment, useRevertPendingPayment } from '../../../api';
+import { useOverview, usePreferences, useCompletePendingPayment, useRevertPendingPayment, useDeleteTransaction } from '../../../api';
 import { useIsOnline } from '../../../query';
 import { Button, Banner, ScreenContainer } from '../../../components/ui';
+import { closeOpenSwipeables } from '../../../components/motion';
 import { TransactionRow } from '../../../components/transactions/TransactionRow';
 import { CompletePendingModal } from '../../../components/transactions/CompletePendingModal';
 import { RevertPendingModal } from '../../../components/transactions/RevertPendingModal';
@@ -55,6 +56,7 @@ export default function TransactionsScreen() {
 
   const completeMutation = useCompletePendingPayment();
   const revertMutation = useRevertPendingPayment();
+  const deleteMutation = useDeleteTransaction();
 
   const [filter, setFilter] = useState<FilterType>('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -237,18 +239,26 @@ export default function TransactionsScreen() {
     [currency, formatCurrency, theme]
   );
 
+  const handleDeleteTransaction = useCallback(
+    (tx: Transaction) => {
+      deleteMutation.mutate(tx.id);
+    },
+    [deleteMutation]
+  );
+
   const renderItem = useCallback(
     ({ item }: { item: Transaction }) => (
       <TransactionRow
         transaction={item}
         currency={currency}
         onPress={handleRowPress}
+        onDelete={handleDeleteTransaction}
         onCompletePending={handleOpenCompleteModal}
         onRevertPending={handleOpenRevertModal}
         showPendingActions={filter === 'pending' || Boolean(item.expectedDate && item.status === 'COMPLETED')}
       />
     ),
-    [currency, filter, handleRowPress, handleOpenCompleteModal, handleOpenRevertModal]
+    [currency, filter, handleRowPress, handleDeleteTransaction, handleOpenCompleteModal, handleOpenRevertModal]
   );
 
   const handleConfirmRevert = async (id: string) => {
@@ -537,6 +547,7 @@ export default function TransactionsScreen() {
             }
             renderSectionHeader={renderSectionHeader}
             renderItem={renderItem}
+            onScrollBeginDrag={closeOpenSwipeables}
             keyboardShouldPersistTaps="handled"
             contentContainerStyle={styles.listContent}
           />

@@ -3,6 +3,7 @@ import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import * as SplashScreen from 'expo-splash-screen';
 import { Locale } from '@haseela/shared';
 import { ThemeProvider, useTheme } from '../theme';
@@ -106,26 +107,31 @@ export default function RootLayout() {
   }, []);
 
   return (
-    <SafeAreaProvider>
-      <CoverTransitionProvider>
-        <ThemeProvider>
-          <LocalizedProviders initialLocale={initialLocale}>
-            <QueryProvider>
-              <AuthProvider>
-                <ForceUpdateGate>
-                  <PushNavigationHandler />
-                  <RootContent isLocaleReady={initialLocale !== null} />
-                </ForceUpdateGate>
-              </AuthProvider>
-            </QueryProvider>
-          </LocalizedProviders>
-        </ThemeProvider>
-      </CoverTransitionProvider>
-    </SafeAreaProvider>
+    <GestureHandlerRootView style={styles.gestureRoot}>
+      <SafeAreaProvider>
+        <CoverTransitionProvider>
+          <ThemeProvider>
+            <LocalizedProviders initialLocale={initialLocale}>
+              <QueryProvider>
+                <AuthProvider>
+                  <ForceUpdateGate>
+                    <PushNavigationHandler />
+                    <RootContent isLocaleReady={initialLocale !== null} />
+                  </ForceUpdateGate>
+                </AuthProvider>
+              </QueryProvider>
+            </LocalizedProviders>
+          </ThemeProvider>
+        </CoverTransitionProvider>
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }
 
 const styles = StyleSheet.create({
+  gestureRoot: {
+    flex: 1,
+  },
   bootFallback: {
     flex: 1,
     alignItems: 'center',
