@@ -22,6 +22,8 @@ import {
 import { useTheme } from '../../theme';
 import { useI18n } from '../../i18n';
 import { parseCalendarDate } from '../../utils/calendarDate';
+import { IconTile } from '../ui';
+import { PressableScale } from '../motion';
 
 export interface TransactionRowProps {
   transaction: Transaction;
@@ -84,34 +86,28 @@ function TransactionRowBase({
   const accessibilityLabel = `${title}, ${signedAmount}, ${formattedDate}, ${statusText}`;
 
   return (
-    <Pressable
+    <PressableScale
       testID={`transaction-row-${transaction.id}`}
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}
       onPress={() => onPress(transaction)}
-      style={({ pressed }) => [
+      scaleTo={theme.motion.press.scaleCard}
+      style={[
         styles.row,
         {
-          backgroundColor: pressed ? theme.colors.surfaceHover : theme.colors.surface,
-          borderBottomColor: theme.colors.border,
+          backgroundColor: theme.colors.surface,
+          borderColor: theme.colors.border,
+          borderRadius: theme.radius.xl,
         },
+        theme.shadows.sm,
       ]}
     >
       <View style={styles.leftCol}>
-        <View
-          style={[
-            styles.typeIconBox,
-            {
-              backgroundColor: isIncome ? theme.colors.positiveTint : theme.colors.negativeTint,
-            },
-          ]}
-        >
-          {isIncome ? (
-            <TrendingUp size={18} color={theme.colors.positiveText} />
-          ) : (
-            <TrendingDown size={18} color={theme.colors.negativeText} />
-          )}
-        </View>
+        <IconTile
+          icon={isIncome ? TrendingUp : TrendingDown}
+          tone={isIncome ? 'positive' : 'negative'}
+          size={44}
+        />
 
         <View style={styles.contentCol}>
           <Text
@@ -251,7 +247,7 @@ function TransactionRowBase({
           </Text>
         )}
       </View>
-    </Pressable>
+    </PressableScale>
   );
 }
 
@@ -262,10 +258,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    minHeight: 56, // >= 44pt touch target
+    minHeight: 68, // >= 44pt touch target
+    marginHorizontal: 16,
+    marginBottom: 8,
     paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderBottomWidth: StyleSheet.hairlineWidth,
+    paddingHorizontal: 14,
+    borderWidth: StyleSheet.hairlineWidth,
     gap: 12,
   },
   leftCol: {
@@ -273,13 +271,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flex: 1,
     gap: 12,
-  },
-  typeIconBox: {
-    width: 38,
-    height: 38,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   contentCol: {
     flex: 1,
@@ -293,18 +284,18 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   badge: {
-    paddingHorizontal: 6,
+    paddingHorizontal: 8,
     paddingVertical: 2,
-    borderRadius: 4,
+    borderRadius: 999,
     borderWidth: 1,
   },
   statusBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 3,
-    paddingHorizontal: 6,
+    paddingHorizontal: 8,
     paddingVertical: 2,
-    borderRadius: 4,
+    borderRadius: 999,
     borderWidth: 1,
   },
   rightCol: {
@@ -320,9 +311,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 4,
     minHeight: 28,
-    paddingHorizontal: 8,
+    paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: 6,
+    borderRadius: 999,
     borderWidth: 1,
   },
 });

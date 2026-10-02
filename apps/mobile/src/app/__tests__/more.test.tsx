@@ -116,4 +116,33 @@ describe('MoreScreen navigation and entry points', () => {
       expect(mockSignOut).toHaveBeenCalled();
     });
   });
+
+  it('exposes the dark-mode row as a switch that flips with the theme', async () => {
+    const { getByTestId } = renderMoreScreen();
+
+    await waitFor(() => {
+      expect(getByTestId('theme-toggle')).toBeTruthy();
+    });
+
+    expect(getByTestId('theme-toggle').props.accessibilityRole).toBe('switch');
+    expect(getByTestId('theme-toggle').props.accessibilityState.checked).toBe(false);
+
+    fireEvent.press(getByTestId('theme-toggle'));
+
+    await waitFor(() => {
+      expect(getByTestId('theme-toggle').props.accessibilityState.checked).toBe(true);
+    });
+  });
+
+  it('shows the language row with its accessibility label and a danger-zone sign-out row', async () => {
+    const { getByTestId } = renderMoreScreen();
+
+    await waitFor(() => {
+      expect(getByTestId('language-toggle')).toBeTruthy();
+    });
+
+    expect(getByTestId('language-toggle').props.accessibilityLabel).toBe('Switch to Arabic language');
+    expect(getByTestId('language-toggle').props.accessibilityRole).toBe('button');
+    expect(getByTestId('sign-out-button').props.accessibilityLabel).toBe('Log out');
+  });
 });

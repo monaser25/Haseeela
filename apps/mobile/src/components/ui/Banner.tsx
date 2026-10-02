@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, StyleProp, ViewStyle } from 'react-native';
 import { AlertCircle, AlertTriangle, Info, CheckCircle2 } from 'lucide-react-native';
 import { useTheme } from '../../theme';
+import { FadeInView } from '../motion';
 
 export type BannerTone = 'error' | 'warning' | 'notice' | 'success';
 
@@ -61,7 +62,7 @@ export function Banner({
   const Icon = config.IconComponent;
 
   return (
-    <View
+    <FadeInView
       accessibilityRole="alert"
       accessibilityLiveRegion="polite"
       testID={testID}
@@ -69,14 +70,15 @@ export function Banner({
         styles.container,
         {
           backgroundColor: config.bg,
-          borderColor: config.border,
-          borderRadius: theme.radius.md,
+          // 8-digit hex: the tone colour at ~28% so the edge reads as a soft tint, not a hard rule.
+          borderColor: `${config.border}47`,
+          borderRadius: theme.radius.lg,
         },
         style,
       ]}
     >
-      <View style={styles.iconWrapper}>
-        <Icon size={20} color={config.text} />
+      <View style={[styles.iconWrapper, { backgroundColor: `${config.border}26` }]}>
+        <Icon size={18} color={config.text} />
       </View>
 
       <View style={styles.contentWrapper}>
@@ -110,7 +112,7 @@ export function Banner({
 
         {children ? <View style={styles.actionWrapper}>{children}</View> : null}
       </View>
-    </View>
+    </FadeInView>
   );
 }
 
@@ -124,19 +126,24 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
   },
   iconWrapper: {
-    marginTop: 2,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   contentWrapper: {
     flex: 1,
+    paddingTop: 4,
   },
   title: {
-    marginBottom: 4,
+    marginBottom: 2,
   },
   message: {
     lineHeight: 20,
   },
   actionWrapper: {
-    marginTop: 8,
+    marginTop: 10,
     width: '100%',
   },
 });

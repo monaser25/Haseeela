@@ -1,10 +1,11 @@
 import React from 'react';
-import { View, Text, Pressable, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import type { Client } from '@haseela/shared';
-import { ChevronRight } from 'lucide-react-native';
 import { useTheme } from '../../theme';
 import { useI18n } from '../../i18n';
 import { parseCalendarDate } from '../../utils/calendarDate';
+import { Avatar, Chevron } from '../ui';
+import { PressableScale } from '../motion';
 
 export interface ClientRowProps {
   client: Client;
@@ -12,13 +13,6 @@ export interface ClientRowProps {
   totalPaid: number;
   onPress: (item: Client) => void;
   testID?: string;
-}
-
-function getInitials(name: string): string {
-  const parts = name.trim().split(/\s+/).filter(Boolean);
-  if (parts.length === 0) return '?';
-  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
-  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
 
 function ClientRowBase({
@@ -84,32 +78,23 @@ function ClientRowBase({
   }, ${scheduleText}, ${t('clients.payment.totalPaid')}: ${formatCurrency(totalPaid, currency)}`;
 
   return (
-    <Pressable
+    <PressableScale
       testID={testID ?? `client-row-${client.id}`}
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}
       onPress={() => onPress(client)}
-      style={({ pressed }) => [
+      scaleTo={theme.motion.press.scaleCard}
+      style={[
         styles.row,
         {
-          backgroundColor: pressed ? theme.colors.surfaceHover : theme.colors.surface,
+          backgroundColor: theme.colors.surface,
           borderColor: theme.colors.border,
+          borderRadius: theme.radius.xl,
         },
+        theme.shadows.sm,
       ]}
     >
-      <View
-        style={[
-          styles.avatar,
-          {
-            backgroundColor: theme.colors.accentTint,
-            borderColor: theme.colors.border,
-          },
-        ]}
-      >
-        <Text style={[styles.avatarText, { color: theme.colors.accent }]}>
-          {getInitials(client.name)}
-        </Text>
-      </View>
+      <Avatar name={client.name} size={48} />
 
       <View style={styles.content}>
         <View style={styles.topRow}>
@@ -152,7 +137,7 @@ function ClientRowBase({
               style={[
                 styles.badgeText,
                 {
-                  color: isRetainer ? theme.colors.accent : theme.colors.textSecondary,
+                  color: isRetainer ? theme.colors.accentText : theme.colors.textSecondary,
                 },
               ]}
             >
@@ -183,10 +168,8 @@ function ClientRowBase({
         </View>
       </View>
 
-      <View style={styles.chevronContainer}>
-        <ChevronRight size={18} color={theme.colors.textMuted} />
-      </View>
-    </Pressable>
+      <Chevron size={18} color={theme.colors.textMuted} />
+    </PressableScale>
   );
 }
 
@@ -196,23 +179,13 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    minHeight: 72, // Exceeds 44pt touch target
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    gap: 12,
-  },
-  avatar: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    alignItems: 'center',
-    justifyContent: 'center',
+    minHeight: 76, // Exceeds 44pt touch target
+    marginHorizontal: 16,
+    marginBottom: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 14,
     borderWidth: StyleSheet.hairlineWidth,
-  },
-  avatarText: {
-    fontSize: 15,
-    fontWeight: '700',
+    gap: 12,
   },
   content: {
     flex: 1,
@@ -241,19 +214,15 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   badge: {
-    paddingHorizontal: 7,
+    paddingHorizontal: 8,
     paddingVertical: 2,
-    borderRadius: 6,
+    borderRadius: 999,
   },
   badgeText: {
     fontSize: 11,
     fontWeight: '600',
   },
   scheduleText: {
-    marginLeft: 2,
-  },
-  chevronContainer: {
-    justifyContent: 'center',
-    paddingLeft: 4,
+    marginStart: 2,
   },
 });

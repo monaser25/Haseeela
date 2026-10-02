@@ -1,19 +1,14 @@
-import React, { useMemo } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  RefreshControl,
-  TouchableOpacity,
-} from 'react-native';
+import React, { useCallback, useMemo } from 'react';
+import { View, Text, StyleSheet, RefreshControl } from 'react-native';
 import { useRouter } from 'expo-router';
 import {
   TrendingUp,
+  TrendingDown,
   Receipt,
   Wallet,
   Clock,
   RefreshCw,
-  Inbox,
+  Sparkles,
   AlertCircle,
 } from 'lucide-react-native';
 import {
@@ -27,12 +22,21 @@ import { useTheme } from '../../../theme';
 import { useI18n } from '../../../i18n';
 import { useAuth } from '../../../auth';
 import { useOverview, usePreferences } from '../../../api';
-import { Button, Banner, ScreenContainer } from '../../../components/ui';
+import {
+  Avatar,
+  Banner,
+  Button,
+  Card,
+  IconTile,
+  ScreenContainer,
+  SectionHeader,
+} from '../../../components/ui';
+import { AnimatedNumber, FadeInView, Skeleton } from '../../../components/motion';
 
 export default function HomeScreen() {
   const router = useRouter();
-  const { theme, isDark } = useTheme();
-  const { t, locale, formatCurrency, formatDate } = useI18n();
+  const { theme } = useTheme();
+  const { t, formatCurrency, formatDate } = useI18n();
   const { user } = useAuth();
 
   const {
@@ -46,6 +50,11 @@ export default function HomeScreen() {
 
   const { data: preferences } = usePreferences();
   const currency = preferences?.currency || 'USD';
+
+  const formatMoney = useCallback(
+    (amount: number) => formatCurrency(amount, currency),
+    [formatCurrency, currency]
+  );
 
   const transactions = useMemo(() => overview?.transactions ?? [], [overview]);
   const clients = useMemo(() => overview?.clients ?? [], [overview]);
@@ -110,65 +119,17 @@ export default function HomeScreen() {
         edges={['top', 'left', 'right']}
       >
         <View style={styles.container}>
-          {/* Skeleton Header */}
-          <View
-            style={[
-              styles.skeletonBox,
-              {
-                height: 48,
-                width: '60%',
-                backgroundColor: theme.colors.surfaceElevated,
-                borderRadius: theme.radius.md,
-              },
-            ]}
-          />
-          {/* Skeleton Hero Card */}
-          <View
-            style={[
-              styles.skeletonBox,
-              {
-                height: 140,
-                backgroundColor: theme.colors.surfaceElevated,
-                borderRadius: theme.radius.lg,
-              },
-            ]}
-          />
-          {/* Skeleton Grid */}
-          <View style={styles.statsGrid}>
-            <View
-              style={[
-                styles.skeletonBox,
-                styles.statCardHalf,
-                {
-                  height: 100,
-                  backgroundColor: theme.colors.surfaceElevated,
-                  borderRadius: theme.radius.lg,
-                },
-              ]}
-            />
-            <View
-              style={[
-                styles.skeletonBox,
-                styles.statCardHalf,
-                {
-                  height: 100,
-                  backgroundColor: theme.colors.surfaceElevated,
-                  borderRadius: theme.radius.lg,
-                },
-              ]}
-            />
+          <View style={styles.header}>
+            <Skeleton width="30%" height={14} />
+            <Skeleton width="62%" height={26} />
           </View>
-          {/* Skeleton List Card */}
-          <View
-            style={[
-              styles.skeletonBox,
-              {
-                height: 180,
-                backgroundColor: theme.colors.surfaceElevated,
-                borderRadius: theme.radius.lg,
-              },
-            ]}
-          />
+          <Skeleton height={148} radius={theme.radius.xl} />
+          <View style={styles.statsRow}>
+            <Skeleton height={112} radius={theme.radius.xl} style={styles.flexItem} />
+            <Skeleton height={112} radius={theme.radius.xl} style={styles.flexItem} />
+          </View>
+          <Skeleton height={96} radius={theme.radius.xl} />
+          <Skeleton height={190} radius={theme.radius.xl} />
         </View>
       </ScreenContainer>
     );
@@ -190,7 +151,7 @@ export default function HomeScreen() {
               },
             ]}
           >
-            <AlertCircle size={40} color={theme.colors.negative} />
+            <AlertCircle size={40} color={theme.colors.negativeText} />
           </View>
           <Text
             accessibilityRole="header"
@@ -216,10 +177,10 @@ export default function HomeScreen() {
     );
   }
 
-  const formattedNetProfit = formatCurrency(stats.netProfit, currency);
-  const formattedRevenue = formatCurrency(stats.totalRevenue, currency);
-  const formattedExpenses = formatCurrency(stats.totalExpenses, currency);
-  const formattedPending = formatCurrency(stats.pendingTotal, currency);
+  const formattedNetProfit = formatMoney(stats.netProfit);
+  const formattedRevenue = formatMoney(stats.totalRevenue);
+  const formattedExpenses = formatMoney(stats.totalExpenses);
+  const formattedPending = formatMoney(stats.pendingTotal);
 
   return (
     <ScreenContainer
@@ -231,28 +192,33 @@ export default function HomeScreen() {
           onRefresh={refetch}
           tintColor={theme.colors.accent}
           colors={[theme.colors.accent]}
+          progressBackgroundColor={theme.colors.surface}
         />
       }
     >
       <View style={styles.container}>
         {/* Header Greeting */}
-        <View style={styles.header}>
-          <Text
-            style={[
-              theme.typography.captionUpper,
-              { color: theme.colors.textMuted },
-            ]}
-          >
-            {t('brand.name')}
-          </Text>
-          <Text
-            accessibilityRole="header"
-            style={[theme.typography.h1, { color: theme.colors.text }]}
-            testID="home-greeting"
-          >
-            {greeting}
-          </Text>
-        </View>
+        <FadeInView index={0} style={styles.headerRow}>
+          <View style={styles.headerText}>
+            <Text
+              style={[
+                theme.typography.captionUpper,
+                { color: theme.colors.textMuted },
+              ]}
+            >
+              {t('brand.name')}
+            </Text>
+            <Text
+              accessibilityRole="header"
+              style={[theme.typography.h1, { color: theme.colors.text }]}
+              testID="home-greeting"
+              numberOfLines={2}
+            >
+              {greeting}
+            </Text>
+          </View>
+          <Avatar name={displayName} size={44} />
+        </FadeInView>
 
         {/* Overdue Pending Alert */}
         {overduePendingCount > 0 ? (
@@ -265,417 +231,371 @@ export default function HomeScreen() {
                 : t('dashboard.alert.overduePlural', { count: String(overduePendingCount) })
             }
             testID="overdue-pending-alert"
+            style={styles.banner}
           />
         ) : null}
 
         {/* Empty state when user has no data */}
         {isDataEmpty ? (
-          <View
-            style={[
-              styles.card,
-              styles.emptyCard,
-              {
-                backgroundColor: theme.colors.surface,
-                borderColor: theme.colors.border,
-                borderRadius: theme.radius.lg,
-              },
-            ]}
-            testID="home-empty-state"
-          >
-            <View
-              style={[
-                styles.emptyIconCircle,
-                { backgroundColor: theme.colors.surfaceHover },
-              ]}
-            >
-              <Inbox size={40} color={theme.colors.textMuted} />
-            </View>
-            <Text
-              accessibilityRole="header"
-              style={[theme.typography.h2, styles.emptyTitle, { color: theme.colors.text }]}
-            >
-              {t('dashboard.recent.empty')}
-            </Text>
-            <Text
-              style={[
-                theme.typography.body,
-                styles.emptySubtitle,
-                { color: theme.colors.textSecondary },
-              ]}
-            >
-              {t('dashboard.recent.emptyAction')}
-            </Text>
-            <Button
-              variant="primary"
-              onPress={() => router.push('/clients')}
-              style={styles.emptyActionButton}
-              testID="empty-action-button"
-            >
-              {t('dashboard.actions.addClient')}
-            </Button>
-          </View>
+          <FadeInView index={1}>
+            <Card variant="tinted" padding={28} style={styles.emptyCard} testID="home-empty-state">
+              <View style={[styles.emptyIconRing, { backgroundColor: theme.colors.surface }, theme.shadows.sm]}>
+                <IconTile icon={Sparkles} tone="accent" size={56} />
+              </View>
+              <Text
+                accessibilityRole="header"
+                style={[theme.typography.h1, styles.emptyTitle, { color: theme.colors.text }]}
+              >
+                {t('dashboard.recent.empty')}
+              </Text>
+              <Text
+                style={[
+                  theme.typography.body,
+                  styles.emptySubtitle,
+                  { color: theme.colors.textSecondary },
+                ]}
+              >
+                {t('dashboard.recent.emptyAction')}
+              </Text>
+              <Button
+                variant="primary"
+                onPress={() => router.push('/clients')}
+                style={styles.emptyActionButton}
+                testID="empty-action-button"
+              >
+                {t('dashboard.actions.addClient')}
+              </Button>
+            </Card>
+          </FadeInView>
         ) : (
           <>
             {/* Hero Net Profit Card */}
-            <View
-              style={[
-                styles.card,
-                styles.heroCard,
-                {
-                  backgroundColor: theme.colors.surface,
-                  borderColor: theme.colors.border,
-                  borderRadius: theme.radius.lg,
-                },
-              ]}
-              accessible={true}
-              accessibilityRole="text"
-              accessibilityLabel={`${t('dashboard.stats.netProfit')}, ${formattedNetProfit}`}
-              testID="stat-card-net-profit"
-            >
-              <View style={styles.cardHeaderRow}>
-                <Text
-                  style={[
-                    theme.typography.captionUpper,
-                    { color: theme.colors.textMuted },
-                  ]}
-                >
-                  {t('dashboard.stats.netProfit')}
-                </Text>
-                <Wallet size={20} color={theme.colors.accent} />
-              </View>
-              <Text
-                style={[
-                  theme.typography.hero,
-                  styles.heroAmount,
-                  {
-                    color:
-                      stats.netProfit >= 0
-                        ? theme.colors.positiveText
-                        : theme.colors.negativeText,
-                  },
-                ]}
-                testID="stat-value-net-profit"
-              >
-                {formattedNetProfit}
-              </Text>
-            </View>
-
-            {/* Stat Cards Grid: Revenue, Expenses, Pending */}
-            <View style={styles.statsGrid}>
-              {/* Revenue */}
-              <View
-                style={[
-                  styles.card,
-                  styles.statCardHalf,
-                  {
-                    backgroundColor: theme.colors.surface,
-                    borderColor: theme.colors.border,
-                    borderRadius: theme.radius.lg,
-                  },
-                ]}
+            <FadeInView index={1}>
+              <Card
+                variant="gradient"
+                padding={24}
                 accessible={true}
                 accessibilityRole="text"
-                accessibilityLabel={`${t('dashboard.stats.totalRevenue')}, ${formattedRevenue}`}
-                testID="stat-card-revenue"
+                accessibilityLabel={`${t('dashboard.stats.netProfit')}, ${formattedNetProfit}`}
+                testID="stat-card-net-profit"
               >
                 <View style={styles.cardHeaderRow}>
                   <Text
                     style={[
-                      theme.typography.captionUpper,
-                      { color: theme.colors.textMuted },
+                      theme.typography.smallMedium,
+                      { color: theme.colors.onHeroMuted },
                     ]}
+                  >
+                    {t('dashboard.stats.netProfit')}
+                  </Text>
+                  <View style={[styles.heroChip, { backgroundColor: theme.colors.onHeroSurface }]}>
+                    <Wallet size={18} color={theme.colors.onHero} />
+                  </View>
+                </View>
+                <AnimatedNumber
+                  value={stats.netProfit}
+                  format={formatMoney}
+                  style={[
+                    theme.typography.display,
+                    styles.tabular,
+                    { color: theme.colors.onHero },
+                  ]}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
+                  testID="stat-value-net-profit"
+                />
+              </Card>
+            </FadeInView>
+
+            {/* Stat Cards: Revenue, Expenses */}
+            <View style={styles.statsRow}>
+              <FadeInView index={2} style={styles.flexItem}>
+                <Card
+                  accessible={true}
+                  accessibilityRole="text"
+                  accessibilityLabel={`${t('dashboard.stats.totalRevenue')}, ${formattedRevenue}`}
+                  testID="stat-card-revenue"
+                  padding={16}
+                  style={styles.statCard}
+                >
+                  <IconTile icon={TrendingUp} tone="positive" size={36} />
+                  <Text
+                    style={[
+                      theme.typography.small,
+                      styles.statLabel,
+                      { color: theme.colors.textSecondary },
+                    ]}
+                    numberOfLines={1}
                   >
                     {t('dashboard.stats.totalRevenue')}
                   </Text>
-                  <TrendingUp size={18} color={theme.colors.positiveText} />
-                </View>
-                <Text
-                  style={[
-                    theme.typography.title,
-                    styles.statValue,
-                    { color: theme.colors.positiveText },
-                  ]}
-                  testID="stat-value-revenue"
-                >
-                  {formattedRevenue}
-                </Text>
-              </View>
+                  <AnimatedNumber
+                    value={stats.totalRevenue}
+                    format={formatMoney}
+                    style={[
+                      theme.typography.amount,
+                      styles.tabular,
+                      { color: theme.colors.positiveText },
+                    ]}
+                    numberOfLines={1}
+                    adjustsFontSizeToFit
+                    testID="stat-value-revenue"
+                  />
+                </Card>
+              </FadeInView>
 
-              {/* Expenses */}
-              <View
-                style={[
-                  styles.card,
-                  styles.statCardHalf,
-                  {
-                    backgroundColor: theme.colors.surface,
-                    borderColor: theme.colors.border,
-                    borderRadius: theme.radius.lg,
-                  },
-                ]}
-                accessible={true}
-                accessibilityRole="text"
-                accessibilityLabel={`${t('dashboard.stats.totalExpenses')}, ${formattedExpenses}`}
-                testID="stat-card-expenses"
-              >
-                <View style={styles.cardHeaderRow}>
+              <FadeInView index={3} style={styles.flexItem}>
+                <Card
+                  accessible={true}
+                  accessibilityRole="text"
+                  accessibilityLabel={`${t('dashboard.stats.totalExpenses')}, ${formattedExpenses}`}
+                  testID="stat-card-expenses"
+                  padding={16}
+                  style={styles.statCard}
+                >
+                  <IconTile icon={Receipt} tone="negative" size={36} />
                   <Text
                     style={[
-                      theme.typography.captionUpper,
-                      { color: theme.colors.textMuted },
+                      theme.typography.small,
+                      styles.statLabel,
+                      { color: theme.colors.textSecondary },
                     ]}
+                    numberOfLines={1}
                   >
                     {t('dashboard.stats.totalExpenses')}
                   </Text>
-                  <Receipt size={18} color={theme.colors.negativeText} />
-                </View>
-                <Text
-                  style={[
-                    theme.typography.title,
-                    styles.statValue,
-                    { color: theme.colors.negativeText },
-                  ]}
-                  testID="stat-value-expenses"
-                >
-                  {formattedExpenses}
-                </Text>
-              </View>
+                  <AnimatedNumber
+                    value={stats.totalExpenses}
+                    format={formatMoney}
+                    style={[
+                      theme.typography.amount,
+                      styles.tabular,
+                      { color: theme.colors.negativeText },
+                    ]}
+                    numberOfLines={1}
+                    adjustsFontSizeToFit
+                    testID="stat-value-expenses"
+                  />
+                </Card>
+              </FadeInView>
+            </View>
 
-              {/* Pending */}
-              <View
-                style={[
-                  styles.card,
-                  styles.statCardFull,
-                  {
-                    backgroundColor: theme.colors.surface,
-                    borderColor: theme.colors.border,
-                    borderRadius: theme.radius.lg,
-                  },
-                ]}
+            {/* Pending */}
+            <FadeInView index={4}>
+              <Card
                 accessible={true}
                 accessibilityRole="text"
                 accessibilityLabel={`${t('pending.kpi.title')}, ${formattedPending}`}
                 testID="stat-card-pending"
+                padding={16}
               >
-                <View style={styles.cardHeaderRow}>
+                <View style={styles.pendingRow}>
+                  <IconTile icon={Clock} tone="warning" size={44} />
+                  <View style={styles.pendingText}>
+                    <Text
+                      style={[theme.typography.small, { color: theme.colors.textSecondary }]}
+                    >
+                      {t('pending.kpi.title')}
+                    </Text>
+                    <AnimatedNumber
+                      value={stats.pendingTotal}
+                      format={formatMoney}
+                      style={[
+                        theme.typography.amount,
+                        styles.tabular,
+                        { color: theme.colors.warningText },
+                      ]}
+                      numberOfLines={1}
+                      adjustsFontSizeToFit
+                      testID="stat-value-pending"
+                    />
+                    {overduePendingCount > 0 ? (
+                      <Text
+                        style={[
+                          theme.typography.smallMedium,
+                          { color: theme.colors.negativeText, marginTop: 2 },
+                        ]}
+                      >
+                        {overduePendingCount === 1
+                          ? t('pending.kpi.overdue', { count: String(overduePendingCount) })
+                          : t('pending.kpi.overduePlural', { count: String(overduePendingCount) })}
+                      </Text>
+                    ) : null}
+                  </View>
+                </View>
+              </Card>
+            </FadeInView>
+
+            {/* Upcoming Subscription Billing */}
+            <FadeInView index={5}>
+              <Card testID="active-subscriptions-card" padding={20}>
+                <SectionHeader
+                  title={t('dashboard.subs.title')}
+                  trailing={<RefreshCw size={18} color={theme.colors.accentText} />}
+                />
+
+                {activeSubscriptions.length > 0 ? (
+                  <View>
+                    {activeSubscriptions.map((sub, index) => {
+                      const nextDate =
+                        sub.nextBillingDate ||
+                        computeNextBillingDate(sub.billingDay || 1);
+                      const formattedDate = formatDate(nextDate, {
+                        month: 'short',
+                        day: 'numeric',
+                      });
+                      const renewsLabel = t('dashboard.subs.renews', {
+                        date: formattedDate,
+                      });
+                      const cycleSuffix =
+                        sub.cycle === 'YEARLY'
+                          ? t('dashboard.subs.perYear')
+                          : t('dashboard.subs.perMonth');
+
+                      return (
+                        <View
+                          key={sub.id}
+                          style={[
+                            styles.listRow,
+                            index > 0 && {
+                              borderTopColor: theme.colors.border,
+                              borderTopWidth: StyleSheet.hairlineWidth,
+                            },
+                          ]}
+                        >
+                          <IconTile icon={RefreshCw} tone="accent" size={40} />
+                          <View style={styles.listInfo}>
+                            <Text
+                              style={[
+                                theme.typography.bodyMedium,
+                                { color: theme.colors.text },
+                              ]}
+                              numberOfLines={1}
+                            >
+                              {sub.name}
+                            </Text>
+                            <Text
+                              style={[
+                                theme.typography.small,
+                                { color: theme.colors.textMuted },
+                              ]}
+                            >
+                              {renewsLabel}
+                            </Text>
+                          </View>
+                          <Text
+                            style={[
+                              theme.typography.bodySemiBold,
+                              styles.tabular,
+                              { color: theme.colors.text },
+                            ]}
+                          >
+                            {formatCurrency(sub.amount, currency)}
+                            <Text
+                              style={[
+                                theme.typography.small,
+                                { color: theme.colors.textMuted },
+                              ]}
+                            >
+                              {cycleSuffix}
+                            </Text>
+                          </Text>
+                        </View>
+                      );
+                    })}
+                  </View>
+                ) : (
                   <Text
                     style={[
-                      theme.typography.captionUpper,
+                      theme.typography.body,
+                      styles.emptySubText,
                       { color: theme.colors.textMuted },
                     ]}
                   >
-                    {t('pending.kpi.title')}
+                    {t('dashboard.subs.empty')}
                   </Text>
-                  <Clock size={18} color={theme.colors.warningText} />
-                </View>
-                <Text
-                  style={[
-                    theme.typography.title,
-                    styles.statValue,
-                    { color: theme.colors.warningText },
-                  ]}
-                  testID="stat-value-pending"
-                >
-                  {formattedPending}
-                </Text>
-                {overduePendingCount > 0 ? (
-                  <Text
-                    style={[
-                      theme.typography.smallMedium,
-                      { color: theme.colors.negativeText, marginTop: 4 },
-                    ]}
-                  >
-                    {overduePendingCount === 1
-                      ? t('pending.kpi.overdue', { count: String(overduePendingCount) })
-                      : t('pending.kpi.overduePlural', { count: String(overduePendingCount) })}
-                  </Text>
-                ) : null}
-              </View>
-            </View>
-
-            {/* Upcoming Subscription Billing */}
-            <View
-              style={[
-                styles.card,
-                {
-                  backgroundColor: theme.colors.surface,
-                  borderColor: theme.colors.border,
-                  borderRadius: theme.radius.lg,
-                },
-              ]}
-              testID="active-subscriptions-card"
-            >
-              <View style={styles.sectionHeaderRow}>
-                <Text
-                  accessibilityRole="header"
-                  style={[theme.typography.h2, { color: theme.colors.text }]}
-                >
-                  {t('dashboard.subs.title')}
-                </Text>
-                <RefreshCw size={18} color={theme.colors.accent} />
-              </View>
-
-              {activeSubscriptions.length > 0 ? (
-                <View style={styles.subList}>
-                  {activeSubscriptions.map((sub) => {
-                    const nextDate =
-                      sub.nextBillingDate ||
-                      computeNextBillingDate(sub.billingDay || 1);
-                    const formattedDate = formatDate(nextDate, {
-                      month: 'short',
-                      day: 'numeric',
-                    });
-                    const renewsLabel = t('dashboard.subs.renews', {
-                      date: formattedDate,
-                    });
-                    const cycleSuffix =
-                      sub.cycle === 'YEARLY'
-                        ? t('dashboard.subs.perYear')
-                        : t('dashboard.subs.perMonth');
-
-                    return (
-                      <View
-                        key={sub.id}
-                        style={[
-                          styles.subRow,
-                          { borderBottomColor: theme.colors.border },
-                        ]}
-                      >
-                        <View style={styles.subInfo}>
-                          <Text
-                            style={[
-                              theme.typography.bodyMedium,
-                              { color: theme.colors.text },
-                            ]}
-                            numberOfLines={1}
-                          >
-                            {sub.name}
-                          </Text>
-                          <Text
-                            style={[
-                              theme.typography.small,
-                              { color: theme.colors.textMuted },
-                            ]}
-                          >
-                            {renewsLabel}
-                          </Text>
-                        </View>
-                        <Text
-                          style={[
-                            theme.typography.bodySemiBold,
-                            { color: theme.colors.text },
-                          ]}
-                        >
-                          {formatCurrency(sub.amount, currency)}
-                          <Text
-                            style={[
-                              theme.typography.small,
-                              { color: theme.colors.textMuted },
-                            ]}
-                          >
-                            {cycleSuffix}
-                          </Text>
-                        </Text>
-                      </View>
-                    );
-                  })}
-                </View>
-              ) : (
-                <Text
-                  style={[
-                    theme.typography.body,
-                    styles.emptySubText,
-                    { color: theme.colors.textMuted },
-                  ]}
-                >
-                  {t('dashboard.subs.empty')}
-                </Text>
-              )}
-            </View>
+                )}
+              </Card>
+            </FadeInView>
 
             {/* Recent Transactions */}
-            <View
-              style={[
-                styles.card,
-                {
-                  backgroundColor: theme.colors.surface,
-                  borderColor: theme.colors.border,
-                  borderRadius: theme.radius.lg,
-                },
-              ]}
-              testID="recent-transactions-card"
-            >
-              <View style={styles.sectionHeaderRow}>
-                <Text
-                  accessibilityRole="header"
-                  style={[theme.typography.h2, { color: theme.colors.text }]}
-                >
-                  {t('dashboard.recent.title')}
-                </Text>
-              </View>
+            <FadeInView index={6}>
+              <Card testID="recent-transactions-card" padding={20}>
+                <SectionHeader title={t('dashboard.recent.title')} />
 
-              {recentTransactions.length > 0 ? (
-                <View style={styles.txList}>
-                  {recentTransactions.map((tx) => {
-                    const isIncome = tx.type === 'INCOME';
-                    const sign = isIncome ? '+' : '−';
-                    const amountTone = isIncome
-                      ? theme.colors.positiveText
-                      : theme.colors.negativeText;
-                    const cat = categoryLabel(tx.categoryId || tx.type, (k) => t(k));
-                    const relDate = getRelativeDate(tx.date);
+                {recentTransactions.length > 0 ? (
+                  <View>
+                    {recentTransactions.map((tx, index) => {
+                      const isIncome = tx.type === 'INCOME';
+                      const sign = isIncome ? '+' : '−';
+                      const amountTone = isIncome
+                        ? theme.colors.positiveText
+                        : theme.colors.negativeText;
+                      const cat = categoryLabel(tx.categoryId || tx.type, (k) => t(k));
+                      const relDate = getRelativeDate(tx.date);
 
-                    return (
-                      <View
-                        key={tx.id}
-                        style={[
-                          styles.txRow,
-                          { borderBottomColor: theme.colors.border },
-                        ]}
-                      >
-                        <View style={styles.txInfo}>
-                          <Text
-                            style={[
-                              theme.typography.bodyMedium,
-                              { color: theme.colors.text },
-                            ]}
-                            numberOfLines={1}
-                          >
-                            {tx.name}
-                          </Text>
-                          <Text
-                            style={[
-                              theme.typography.small,
-                              { color: theme.colors.textMuted },
-                            ]}
-                          >
-                            {cat} · {relDate}
-                          </Text>
-                        </View>
-                        <Text
+                      return (
+                        <View
+                          key={tx.id}
                           style={[
-                            theme.typography.bodySemiBold,
-                            { color: amountTone },
+                            styles.listRow,
+                            index > 0 && {
+                              borderTopColor: theme.colors.border,
+                              borderTopWidth: StyleSheet.hairlineWidth,
+                            },
                           ]}
                         >
-                          {sign}
-                          {formatCurrency(tx.amount, currency)}
-                        </Text>
-                      </View>
-                    );
-                  })}
-                </View>
-              ) : (
-                <Text
-                  style={[
-                    theme.typography.body,
-                    styles.emptySubText,
-                    { color: theme.colors.textMuted },
-                  ]}
-                >
-                  {t('dashboard.recent.empty')}
-                </Text>
-              )}
-            </View>
+                          <IconTile
+                            icon={isIncome ? TrendingUp : TrendingDown}
+                            tone={isIncome ? 'positive' : 'negative'}
+                            size={40}
+                          />
+                          <View style={styles.listInfo}>
+                            <Text
+                              style={[
+                                theme.typography.bodyMedium,
+                                { color: theme.colors.text },
+                              ]}
+                              numberOfLines={1}
+                            >
+                              {tx.name}
+                            </Text>
+                            <Text
+                              style={[
+                                theme.typography.small,
+                                { color: theme.colors.textMuted },
+                              ]}
+                            >
+                              {cat} · {relDate}
+                            </Text>
+                          </View>
+                          <Text
+                            style={[
+                              theme.typography.bodySemiBold,
+                              styles.tabular,
+                              { color: amountTone },
+                            ]}
+                          >
+                            {sign}
+                            {formatCurrency(tx.amount, currency)}
+                          </Text>
+                        </View>
+                      );
+                    })}
+                  </View>
+                ) : (
+                  <Text
+                    style={[
+                      theme.typography.body,
+                      styles.emptySubText,
+                      { color: theme.colors.textMuted },
+                    ]}
+                  >
+                    {t('dashboard.recent.empty')}
+                  </Text>
+                )}
+              </Card>
+            </FadeInView>
           </>
         )}
       </View>
@@ -689,81 +609,72 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   header: {
-    gap: 2,
+    gap: 8,
     marginBottom: 4,
   },
-  card: {
-    padding: 16,
-    borderWidth: 1,
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+    marginBottom: 4,
   },
-  heroCard: {
-    padding: 20,
+  headerText: {
+    flex: 1,
+    gap: 2,
+  },
+  banner: {
+    marginBottom: 0,
   },
   cardHeaderRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 10,
   },
-  sectionHeaderRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  heroChip: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     alignItems: 'center',
-    marginBottom: 12,
+    justifyContent: 'center',
   },
-  heroAmount: {
+  tabular: {
     fontVariant: ['tabular-nums'],
   },
-  statsGrid: {
+  statsRow: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
     gap: 12,
   },
-  statCardHalf: {
+  flexItem: {
     flex: 1,
-    minWidth: '45%',
   },
-  statCardFull: {
-    width: '100%',
+  statCard: {
+    gap: 4,
   },
-  statValue: {
-    fontVariant: ['tabular-nums'],
-    marginTop: 2,
+  statLabel: {
+    marginTop: 8,
   },
-  subList: {
-    gap: 0,
-  },
-  subRow: {
+  pendingRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 10,
-    borderBottomWidth: StyleSheet.hairlineWidth,
+    gap: 14,
   },
-  subInfo: {
+  pendingText: {
     flex: 1,
-    paddingEnd: 12,
+  },
+  listRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingVertical: 12,
+  },
+  listInfo: {
+    flex: 1,
   },
   emptySubText: {
     paddingVertical: 12,
     textAlign: 'center',
-  },
-  txList: {
-    gap: 0,
-  },
-  txRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 12,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-  },
-  txInfo: {
-    flex: 1,
-    paddingEnd: 12,
-  },
-  skeletonBox: {
-    width: '100%',
   },
   errorContainer: {
     flex: 1,
@@ -773,9 +684,9 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   errorIconCircle: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
+    width: 72,
+    height: 72,
+    borderRadius: 36,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 8,
@@ -793,17 +704,15 @@ const styles = StyleSheet.create({
   },
   emptyCard: {
     alignItems: 'center',
-    paddingVertical: 36,
-    paddingHorizontal: 20,
-    gap: 8,
+    gap: 10,
   },
-  emptyIconCircle: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
+  emptyIconRing: {
+    width: 84,
+    height: 84,
+    borderRadius: 42,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 8,
+    marginBottom: 6,
   },
   emptyTitle: {
     textAlign: 'center',
@@ -813,6 +722,6 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   emptyActionButton: {
-    minWidth: 180,
+    minWidth: 200,
   },
 });

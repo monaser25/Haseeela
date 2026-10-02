@@ -24,34 +24,26 @@ function renderTabLayout(initialLocale: 'en' | 'ar' = 'en') {
 
 describe('TabLayout bottom-tab navigation', () => {
   it('renders all four tabs with correct English labels', () => {
-    const { getByTestId, getByText } = renderTabLayout('en');
+    const { getByTestId } = renderTabLayout('en');
 
-    expect(getByTestId('tab-screen-index')).toBeTruthy();
-    expect(getByText('Home')).toBeTruthy();
+    expect(getByTestId('tab-screen-index').props.accessibilityLabel).toBe('Home');
 
-    expect(getByTestId('tab-screen-transactions')).toBeTruthy();
-    expect(getByText('Transactions')).toBeTruthy();
+    expect(getByTestId('tab-screen-transactions').props.accessibilityLabel).toBe('Transactions');
 
-    expect(getByTestId('tab-screen-clients')).toBeTruthy();
-    expect(getByText('Clients')).toBeTruthy();
+    expect(getByTestId('tab-screen-clients').props.accessibilityLabel).toBe('Clients');
 
-    expect(getByTestId('tab-screen-more')).toBeTruthy();
-    expect(getByText('More')).toBeTruthy();
+    expect(getByTestId('tab-screen-more').props.accessibilityLabel).toBe('More');
   });
 
   it('renders all four tabs with correct Arabic labels', () => {
-    const { getByTestId, getByText } = renderTabLayout('ar');
+    const { getByTestId } = renderTabLayout('ar');
 
-    expect(getByTestId('tab-screen-index')).toBeTruthy();
-    expect(getByText('الرئيسية')).toBeTruthy();
+    expect(getByTestId('tab-screen-index').props.accessibilityLabel).toBe('الرئيسية');
 
-    expect(getByTestId('tab-screen-transactions')).toBeTruthy();
-    expect(getByText('المعاملات')).toBeTruthy();
+    expect(getByTestId('tab-screen-transactions').props.accessibilityLabel).toBe('المعاملات');
 
-    expect(getByTestId('tab-screen-clients')).toBeTruthy();
-    expect(getByText('العملاء')).toBeTruthy();
+    expect(getByTestId('tab-screen-clients').props.accessibilityLabel).toBe('العملاء');
 
-    expect(getByTestId('tab-screen-more')).toBeTruthy();
-    expect(getByText('المزيد')).toBeTruthy();
+    expect(getByTestId('tab-screen-more').props.accessibilityLabel).toBe('المزيد');
   });
 });

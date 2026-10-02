@@ -671,6 +671,8 @@ export const en = {
   'more.notifications': 'Notifications',
   'more.notificationsDesc': 'Reminders & activity',
   'more.profile': 'Profile',
+  'more.section.preferences': 'Preferences',
+  'more.version': 'Version {version}',
 
   'archive.title': 'Archive',
   'archive.subtitle': 'Paused clients and subscriptions with preserved historical records',

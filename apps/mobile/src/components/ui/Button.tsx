@@ -1,6 +1,5 @@
 import React from 'react';
 import {
-  Pressable,
   Text,
   ActivityIndicator,
   StyleSheet,
@@ -9,7 +8,9 @@ import {
   TextStyle,
   View,
 } from 'react-native';
-import { useTheme } from '../../theme';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useTheme, gradientDirection } from '../../theme';
+import { PressableScale } from '../motion';
 
 export type ButtonVariant = 'primary' | 'secondary' | 'link' | 'destructive';
 
@@ -51,7 +52,6 @@ export function Button({
   const isLink = variant === 'link';
   const isDestructive = variant === 'destructive';
 
-  // Base background & border colors per variant
   const backgroundColor = isPrimary
     ? theme.colors.accent
     : isSecondary
@@ -73,13 +73,13 @@ export function Button({
       ? theme.colors.text
       : isDestructive
         ? theme.colors.negativeText
-        : theme.colors.accent;
+        : theme.colors.accentText;
 
   const indicatorColor = isPrimary
     ? theme.colors.accentFg
     : isDestructive
       ? theme.colors.negativeText
-      : theme.colors.accent;
+      : theme.colors.accentText;
 
   const isIconRight = iconPosition === 'right';
 
@@ -95,7 +95,7 @@ export function Button({
   ) : null;
 
   return (
-    <Pressable
+    <PressableScale
       testID={testID}
       accessibilityRole="button"
       accessibilityLabel={
@@ -105,19 +105,31 @@ export function Button({
       accessibilityState={{ disabled: isDisabled, busy: loading }}
       disabled={isDisabled}
       onPress={onPress}
-      style={({ pressed }) => [
+      haptic={isLink ? false : 'light'}
+      scaleTo={isLink ? 0.98 : undefined}
+      restOpacity={isDisabled ? 0.55 : 1}
+      style={[
         styles.base,
         isLink ? styles.linkBase : styles.standardBase,
         {
-          backgroundColor: isPrimary && pressed ? theme.colors.accentHover : backgroundColor,
+          backgroundColor,
           borderColor,
           borderWidth,
-          borderRadius: isLink ? theme.radius.sm : theme.radius.md,
-          opacity: isDisabled ? 0.6 : pressed ? 0.85 : 1,
+          borderRadius: isLink ? theme.radius.sm : theme.radius.lg,
         },
+        isPrimary && !isDisabled ? theme.shadows.md : null,
         style,
       ]}
     >
+      {isPrimary ? (
+        <LinearGradient
+          colors={theme.gradients.accent}
+          start={gradientDirection.diagonal.start}
+          end={gradientDirection.diagonal.end}
+          style={[StyleSheet.absoluteFill, { borderRadius: theme.radius.lg }]}
+        />
+      ) : null}
+
       <View style={styles.contentRow}>
         {!isIconRight ? iconElement : null}
 
@@ -138,7 +150,7 @@ export function Button({
 
         {isIconRight ? iconElement : null}
       </View>
-    </Pressable>
+    </PressableScale>
   );
 }
 
@@ -148,9 +160,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   standardBase: {
-    minHeight: 48, // >= 44pt touch target
-    paddingHorizontal: 20,
-    paddingVertical: 12,
+    minHeight: 52, // >= 44pt touch target
+    paddingHorizontal: 22,
+    paddingVertical: 14,
     width: '100%',
   },
   linkBase: {

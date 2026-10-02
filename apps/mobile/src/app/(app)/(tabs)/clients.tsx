@@ -485,7 +485,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
   },
   listContent: {
-    paddingBottom: 100,
+    paddingBottom: 40,
   },
   loadingContainer: {
     flex: 1,

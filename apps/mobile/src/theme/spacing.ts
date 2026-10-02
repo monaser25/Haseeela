@@ -9,6 +9,7 @@ export const spacing = {
   xl: 24,
   xxl: 32,
   xxxl: 40,
+  huge: 48,
 } as const;
 
 export type Spacing = typeof spacing;
