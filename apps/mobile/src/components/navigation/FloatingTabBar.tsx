@@ -123,6 +123,16 @@ export function FloatingTabBar({ state, descriptors, navigation, position }: Flo
   );
 
   const activeLayout = getSlotLayout(activeSlot);
+  const slotWidth = activeLayout.width > 0 ? activeLayout.width : barWidth > 0 ? barWidth / slotCount : 0;
+  // A fixed-size capsule centered in its slot, inset from the bar's rounded ends.
+  const pillWidth = Math.max(0, Math.min(slotWidth - PILL_INSET * 2, PILL_MAX_WIDTH));
+  const pillXFor = useCallback(
+    (slot: number) => {
+      const l = getSlotLayout(slot);
+      return l.x + (l.width - pillWidth) / 2;
+    },
+    [getSlotLayout, pillWidth]
+  );
 
   // Shared value tracking continuous position (0..routes.length - 1)
   const posShared = useSharedValue(state.index);
@@ -137,13 +147,12 @@ export function FloatingTabBar({ state, descriptors, navigation, position }: Flo
     const ws: number[] = [];
     for (let r = 0; r < state.routes.length; r++) {
       const slot = slotFor(r);
-      const l = getSlotLayout(slot);
-      xs.push(l.x);
-      ws.push(l.width);
+      xs.push(pillXFor(slot));
+      ws.push(pillWidth);
     }
     routeXArray.value = xs;
     routeWArray.value = ws;
-  }, [state.routes.length, getSlotLayout, routeXArray, routeWArray]);
+  }, [state.routes.length, pillXFor, pillWidth, routeXArray, routeWArray]);
 
   // Without a pager position (plain tabs, tests) the pill springs to the focused index.
   useEffect(() => {
@@ -152,7 +161,7 @@ export function FloatingTabBar({ state, descriptors, navigation, position }: Flo
 
   // The pager drives `position` on the native driver, so JS listeners never fire while swiping.
   // Interpolating it in an RN Animated style keeps the pill on the finger, on the UI thread.
-  const routeXs = state.routes.map((_, r) => getSlotLayout(slotFor(r)).x);
+  const routeXs = state.routes.map((_, r) => pillXFor(slotFor(r)));
   const pagerTranslateX =
     position && routeXs.length > 1
       ? position.interpolate({
@@ -219,7 +228,7 @@ export function FloatingTabBar({ state, descriptors, navigation, position }: Flo
     });
   }, []);
 
-  const effectivePillWidth = activeLayout.width > 0 ? activeLayout.width : barWidth > 0 ? barWidth / slotCount : 0;
+  const effectivePillWidth = pillWidth;
 
   return (
     <View
@@ -317,6 +326,9 @@ export function FloatingTabBar({ state, descriptors, navigation, position }: Flo
     </View>
   );
 }
+
+const PILL_INSET = 6;
+const PILL_MAX_WIDTH = 76;
 
 const styles = StyleSheet.create({
   wrapper: {
