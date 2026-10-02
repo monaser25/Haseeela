@@ -61,6 +61,11 @@ export function formatCurrency(amount: number, currency: string, _locale: Locale
   return `${LRI}${number} ${currencySymbol(currency)}${PDI}`;
 }
 
+/** Puts a +/- in front of a formatted amount, inside its isolate so it stays in front in RTL. */
+export function prefixCurrencySign(sign: string, formatted: string) {
+  return formatted.startsWith(LRI) ? `${LRI}${sign}${formatted.slice(LRI.length)}` : `${sign}${formatted}`;
+}
+
 function formatArabicDate(date: Date, options?: DateFormatOptions) {
   const includeDay = options?.day !== undefined || (!options?.month && !options?.year);
   const includeMonth = options?.month !== undefined || (!options?.day && !options?.year);

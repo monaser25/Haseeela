@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import type { Transaction } from '@haseela/shared';
+import { prefixCurrencySign } from '@haseela/shared';
 import {
   Search,
   X,
@@ -214,7 +215,7 @@ export default function TransactionsScreen() {
     ({ section }: { section: TransactionSection }) => {
       const isPositive = section.totalAmount >= 0;
       const formattedSum = formatCurrency(Math.abs(section.totalAmount), currency);
-      const signedSum = `${isPositive ? '+' : '-'}${formattedSum}`;
+      const signedSum = prefixCurrencySign(isPositive ? '+' : '-', formattedSum);
 
       return (
         <View

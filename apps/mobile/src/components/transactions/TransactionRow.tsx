@@ -9,6 +9,7 @@ import type { Transaction, CurrencyCode } from '@haseela/shared';
 import {
   categoryLabel,
   daysOverdue,
+  prefixCurrencySign,
 } from '@haseela/shared';
 import {
   TrendingUp,
@@ -59,7 +60,7 @@ function TransactionRowBase({
   const catLabel = categoryLabel(transaction.categoryId, (k) => t(k));
 
   const formattedAmount = formatCurrency(transaction.amount, currency);
-  const signedAmount = `${isIncome ? '+' : '-'}${formattedAmount}`;
+  const signedAmount = prefixCurrencySign(isIncome ? '+' : '-', formattedAmount);
 
   const txDate = transaction.expectedDate || transaction.date;
   const formattedDate = formatDate(parseCalendarDate(txDate), {
