@@ -92,7 +92,7 @@ export default function NewSubscriptionScreen() {
   };
 
   return (
-    <ScreenContainer testID="subscription-new-screen" edges={['top', 'bottom', 'left', 'right']}>
+    <ScreenContainer testID="subscription-new-screen" edges={['top', 'bottom', 'left', 'right']} scrollable={false} padded={false}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={styles.keyboardAvoid}

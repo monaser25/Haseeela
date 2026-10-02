@@ -121,6 +121,7 @@ export default function NewTransactionScreen() {
       edges={['top', 'bottom', 'left', 'right']}
       showOfflineBanner={false}
       scrollable={false}
+      padded={false}
     >
       <KeyboardAvoidingView
         style={styles.keyboardView}
