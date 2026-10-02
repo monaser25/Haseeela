@@ -101,6 +101,37 @@ jest.mock('expo-notifications', () => ({
   clearLastNotificationResponse: jest.fn(),
 }));
 
+// Reanimated / worklets need native runtimes that do not exist under Jest. Use the libraries' own
+// JS mocks; layout animations (entering/exiting) become no-ops and shared values are plain objects.
+jest.mock('react-native-worklets', () => require('react-native-worklets/src/mock'));
+// The library mock has no useReducedMotion. Default to "reduced motion on" so every component renders
+// its final state synchronously (no entering animations, no count-up) - existing assertions stay
+// deterministic. Motion tests override the mock to exercise the animated path.
+jest.mock('react-native-reanimated', () => {
+  const mock = require('react-native-reanimated/mock');
+  return { ...mock, useReducedMotion: jest.fn(() => true) };
+});
+
+// Haptics and gradients are native modules; stub them so components render under Jest.
+jest.mock('expo-haptics', () => ({
+  __esModule: true,
+  ImpactFeedbackStyle: { Light: 'light', Medium: 'medium', Heavy: 'heavy', Soft: 'soft', Rigid: 'rigid' },
+  NotificationFeedbackType: { Success: 'success', Warning: 'warning', Error: 'error' },
+  impactAsync: jest.fn(async () => undefined),
+  notificationAsync: jest.fn(async () => undefined),
+  selectionAsync: jest.fn(async () => undefined),
+}));
+
+jest.mock('expo-linear-gradient', () => {
+  const React = require('react');
+  const { View } = require('react-native');
+  return {
+    __esModule: true,
+    LinearGradient: ({ children, colors, ...props }) =>
+      React.createElement(View, { testID: 'linear-gradient', ...props }, children),
+  };
+});
+
 // Mock expo-router
 jest.mock('expo-router', () => {
   const React = require('react');

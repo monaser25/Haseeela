@@ -97,9 +97,15 @@ export default function AppLayout() {
         screenOptions={{
           headerShown: false,
           contentStyle: { backgroundColor: theme.colors.bg },
+          // Pushed screens slide in along the reading direction (native stack mirrors it in RTL);
+          // modals use the platform sheet presentation set per screen below.
+          animation: 'slide_from_right',
+          animationDuration: 320,
+          gestureEnabled: true,
+          fullScreenGestureEnabled: true,
         }}
       >
-        <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="(tabs)" options={{ animation: 'fade' }} />
         <Stack.Screen name="onboarding" />
         <Stack.Screen
           name="transaction/new"

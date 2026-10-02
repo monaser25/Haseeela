@@ -6,16 +6,31 @@ export type TypographyStyle = Pick<
 >;
 
 export const typography = {
+  /** Big balance figure on the hero card. */
+  display: {
+    fontSize: 40,
+    lineHeight: 48,
+    fontWeight: '800',
+    letterSpacing: -1,
+  },
   hero: {
     fontSize: 34,
     lineHeight: 40,
     fontWeight: '700',
+    letterSpacing: -0.6,
   },
   title: {
     fontSize: 28,
     lineHeight: 34,
-    fontWeight: '600',
+    fontWeight: '700',
     letterSpacing: -0.5,
+  },
+  /** Medium money figure (stat tiles). */
+  amount: {
+    fontSize: 22,
+    lineHeight: 28,
+    fontWeight: '700',
+    letterSpacing: -0.3,
   },
   h1: {
     fontSize: 22,

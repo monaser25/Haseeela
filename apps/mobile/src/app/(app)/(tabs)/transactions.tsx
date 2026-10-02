@@ -700,7 +700,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   listContent: {
-    paddingBottom: 96,
+    paddingBottom: 40,
   },
   emptyContainer: {
     flex: 1,

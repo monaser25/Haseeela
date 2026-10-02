@@ -1,11 +1,43 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, Pressable, StyleSheet, I18nManager } from 'react-native';
+import { View, Text, ActivityIndicator, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Repeat, ChevronRight, FileText, Settings as SettingsIcon, Bell } from 'lucide-react-native';
+import Constants from 'expo-constants';
+import {
+  Repeat,
+  FileText,
+  Settings as SettingsIcon,
+  Bell,
+  Languages,
+  Moon,
+  Sun,
+  LogOut,
+} from 'lucide-react-native';
 import { useTheme } from '../../../theme';
 import { useI18n } from '../../../i18n';
 import { useAuth } from '../../../auth';
-import { Button, ScreenContainer } from '../../../components/ui';
+import {
+  Avatar,
+  Card,
+  Chevron,
+  ListGroup,
+  ListRow,
+  ScreenContainer,
+} from '../../../components/ui';
+import { FadeInView, triggerHaptic } from '../../../components/motion';
+
+interface SectionLabelProps {
+  title: string;
+  color: string;
+  typography: object;
+}
+
+function SectionLabel({ title, color, typography }: SectionLabelProps) {
+  return (
+    <Text accessibilityRole="header" style={[typography, styles.sectionLabel, { color }]}>
+      {title}
+    </Text>
+  );
+}
 
 export default function MoreScreen() {
   const router = useRouter();
@@ -20,7 +52,7 @@ export default function MoreScreen() {
     t('onboarding.welcome.fallback_name');
 
   const nextLanguageLabel = t('home.nextLanguage');
-  const themeLabel = isDark ? t('home.themeLight') : t('home.themeDark');
+  const appVersion = Constants.expoConfig?.version;
 
   const handleSignOut = async () => {
     setIsSigningOut(true);
@@ -31,33 +63,38 @@ export default function MoreScreen() {
     }
   };
 
+  const labelColor = theme.colors.textSecondary;
+  const labelTypography = theme.typography.smallMedium;
+
   return (
     <ScreenContainer testID="more-tab-screen" edges={['top', 'left', 'right']}>
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        <View style={styles.container}>
-          {/* User Profile Card - Pressable to Profile */}
-          <Pressable
-            testID="more-profile-card"
-            accessibilityRole="button"
-            accessibilityLabel={t('more.profile')}
-            onPress={() => router.push('/(app)/profile' as any)}
-            style={({ pressed }) => [
-              styles.card,
-              {
-                backgroundColor: pressed ? theme.colors.surfaceHover : theme.colors.surface,
-                borderColor: theme.colors.border,
-                borderRadius: theme.radius.lg,
-              },
-            ]}
+      <View style={styles.container}>
+        <FadeInView index={0}>
+          <Text
+            accessibilityRole="header"
+            style={[theme.typography.title, { color: theme.colors.text }]}
           >
-            <View style={styles.profileHeaderRow}>
+            {t('tabs.more')}
+          </Text>
+        </FadeInView>
+
+        {/* Profile header card - pressable to Profile */}
+        <FadeInView index={1}>
+          <Card
+            variant="gradient"
+            padding={20}
+            testID="more-profile-card"
+            accessibilityLabel={t('more.profile')}
+            haptic="selection"
+            onPress={() => router.push('/(app)/profile' as any)}
+          >
+            <View style={styles.profileRow}>
+              <Avatar name={displayName} size={60} tone="accent" />
               <View style={styles.profileInfo}>
                 <Text
                   accessibilityRole="header"
-                  style={[theme.typography.h1, styles.nameText, { color: theme.colors.text }]}
+                  numberOfLines={1}
+                  style={[theme.typography.h1, { color: theme.colors.onHero }]}
                   testID="more-user-name"
                 >
                   {displayName}
@@ -65,11 +102,8 @@ export default function MoreScreen() {
 
                 {user?.email ? (
                   <Text
-                    style={[
-                      theme.typography.body,
-                      styles.emailText,
-                      { color: theme.colors.textSecondary },
-                    ]}
+                    numberOfLines={1}
+                    style={[theme.typography.small, { color: theme.colors.onHeroMuted }]}
                     testID="more-user-email"
                   >
                     {user.email}
@@ -77,257 +111,167 @@ export default function MoreScreen() {
                 ) : null}
               </View>
 
-              <ChevronRight
-                size={20}
-                color={theme.colors.textMuted}
-                style={I18nManager.isRTL ? { transform: [{ scaleX: -1 }] } : undefined}
-              />
+              <Chevron size={20} color={theme.colors.onHero} />
             </View>
-          </Pressable>
+          </Card>
+        </FadeInView>
 
-          {/* Navigation Links Group */}
-          <View style={styles.linksGroup}>
-            {/* Invoices Navigation Link */}
-            <Pressable
+        {/* Workspace */}
+        <FadeInView index={2}>
+          <SectionLabel
+            title={t('settings.section.workspace')}
+            color={labelColor}
+            typography={labelTypography}
+          />
+          <ListGroup>
+            <ListRow
               testID="more-invoices-link"
-              accessibilityRole="button"
-              accessibilityLabel={t('more.invoices')}
+              icon={FileText}
+              iconTone="accent"
+              title={t('more.invoices')}
+              subtitle={t('more.invoicesDesc')}
               onPress={() => router.push('/(app)/invoices' as any)}
-              style={({ pressed }) => [
-                styles.linkCard,
-                {
-                  backgroundColor: pressed ? theme.colors.surfaceHover : theme.colors.surface,
-                  borderColor: theme.colors.border,
-                  borderRadius: theme.radius.lg,
-                },
-              ]}
-            >
-              <View style={[styles.linkIcon, { backgroundColor: theme.colors.accentTint }]}>
-                <FileText size={20} color={theme.colors.accent} />
-              </View>
-              <View style={styles.linkTextContainer}>
-                <Text style={[theme.typography.bodySemiBold, { color: theme.colors.text }]}>
-                  {t('more.invoices')}
-                </Text>
-                <Text
-                  style={[
-                    theme.typography.caption,
-                    { color: theme.colors.textSecondary, marginTop: 2 },
-                  ]}
-                >
-                  {t('more.invoicesDesc')}
-                </Text>
-              </View>
-              <ChevronRight
-                size={18}
-                color={theme.colors.textMuted}
-                style={I18nManager.isRTL ? { transform: [{ scaleX: -1 }] } : undefined}
-              />
-            </Pressable>
-
-            {/* Subscriptions Navigation Link */}
-            <Pressable
+            />
+            <ListRow
               testID="more-subscriptions-link"
-              accessibilityRole="button"
-              accessibilityLabel={t('more.subscriptions')}
+              icon={Repeat}
+              iconTone="positive"
+              title={t('more.subscriptions')}
+              subtitle={t('more.subscriptionsDesc')}
               onPress={() => router.push('/(app)/subscriptions' as any)}
-              style={({ pressed }) => [
-                styles.linkCard,
-                {
-                  backgroundColor: pressed ? theme.colors.surfaceHover : theme.colors.surface,
-                  borderColor: theme.colors.border,
-                  borderRadius: theme.radius.lg,
-                },
-              ]}
-            >
-              <View style={[styles.linkIcon, { backgroundColor: theme.colors.accentTint }]}>
-                <Repeat size={20} color={theme.colors.accent} />
-              </View>
-              <View style={styles.linkTextContainer}>
-                <Text style={[theme.typography.bodySemiBold, { color: theme.colors.text }]}>
-                  {t('more.subscriptions')}
-                </Text>
-                <Text
-                  style={[
-                    theme.typography.caption,
-                    { color: theme.colors.textSecondary, marginTop: 2 },
-                  ]}
-                >
-                  {t('more.subscriptionsDesc')}
-                </Text>
-              </View>
-              <ChevronRight
-                size={18}
-                color={theme.colors.textMuted}
-                style={I18nManager.isRTL ? { transform: [{ scaleX: -1 }] } : undefined}
-              />
-            </Pressable>
+            />
+          </ListGroup>
+        </FadeInView>
 
-            {/* Notifications Navigation Link */}
-            <Pressable
+        {/* Account */}
+        <FadeInView index={3}>
+          <SectionLabel
+            title={t('settings.section.account')}
+            color={labelColor}
+            typography={labelTypography}
+          />
+          <ListGroup>
+            <ListRow
               testID="more-notifications-link"
-              accessibilityRole="button"
-              accessibilityLabel={t('more.notifications')}
+              icon={Bell}
+              iconTone="info"
+              title={t('more.notifications')}
+              subtitle={t('more.notificationsDesc')}
               onPress={() => router.push('/(app)/notifications' as any)}
-              style={({ pressed }) => [
-                styles.linkCard,
-                {
-                  backgroundColor: pressed ? theme.colors.surfaceHover : theme.colors.surface,
-                  borderColor: theme.colors.border,
-                  borderRadius: theme.radius.lg,
-                },
-              ]}
-            >
-              <View style={[styles.linkIcon, { backgroundColor: theme.colors.infoTint }]}>
-                <Bell size={20} color={theme.colors.info} />
-              </View>
-              <View style={styles.linkTextContainer}>
-                <Text style={[theme.typography.bodySemiBold, { color: theme.colors.text }]}>
-                  {t('more.notifications')}
-                </Text>
-                <Text
-                  style={[
-                    theme.typography.caption,
-                    { color: theme.colors.textSecondary, marginTop: 2 },
-                  ]}
-                >
-                  {t('more.notificationsDesc')}
-                </Text>
-              </View>
-              <ChevronRight
-                size={18}
-                color={theme.colors.textMuted}
-                style={I18nManager.isRTL ? { transform: [{ scaleX: -1 }] } : undefined}
-              />
-            </Pressable>
-
-            {/* Settings Navigation Link */}
-            <Pressable
+            />
+            <ListRow
               testID="more-settings-link"
-              accessibilityRole="button"
-              accessibilityLabel={t('more.settings')}
+              icon={SettingsIcon}
+              iconTone="neutral"
+              title={t('more.settings')}
+              subtitle={t('more.settingsDesc')}
               onPress={() => router.push('/(app)/settings' as any)}
-              style={({ pressed }) => [
-                styles.linkCard,
-                {
-                  backgroundColor: pressed ? theme.colors.surfaceHover : theme.colors.surface,
-                  borderColor: theme.colors.border,
-                  borderRadius: theme.radius.lg,
-                },
-              ]}
-            >
-              <View style={[styles.linkIcon, { backgroundColor: theme.colors.accentTint }]}>
-                <SettingsIcon size={20} color={theme.colors.accent} />
-              </View>
-              <View style={styles.linkTextContainer}>
-                <Text style={[theme.typography.bodySemiBold, { color: theme.colors.text }]}>
-                  {t('more.settings')}
-                </Text>
-                <Text
-                  style={[
-                    theme.typography.caption,
-                    { color: theme.colors.textSecondary, marginTop: 2 },
-                  ]}
-                >
-                  {t('more.settingsDesc')}
-                </Text>
-              </View>
-              <ChevronRight
-                size={18}
-                color={theme.colors.textMuted}
-                style={I18nManager.isRTL ? { transform: [{ scaleX: -1 }] } : undefined}
-              />
-            </Pressable>
-          </View>
+            />
+          </ListGroup>
+        </FadeInView>
 
-          {/* Preferences / Actions */}
-          <View style={styles.actions}>
-            <Button
-              variant="secondary"
-              onPress={toggleLocale}
+        {/* Preferences: inline toggles */}
+        <FadeInView index={4}>
+          <SectionLabel
+            title={t('more.section.preferences')}
+            color={labelColor}
+            typography={labelTypography}
+          />
+          <ListGroup>
+            <ListRow
+              testID="language-toggle"
+              icon={Languages}
+              iconTone="warning"
+              title={t('settings.label.language')}
               accessibilityLabel={t('home.switchLanguageA11y')}
               accessibilityHint={t('home.switchLanguageHint')}
-              testID="language-toggle"
-            >
-              {nextLanguageLabel}
-            </Button>
-
-            <Button
-              variant="secondary"
-              onPress={toggleTheme}
+              onPress={toggleLocale}
+              trailing={
+                <Text style={[theme.typography.smallMedium, { color: theme.colors.accentText }]}>
+                  {nextLanguageLabel}
+                </Text>
+              }
+            />
+            <ListRow
+              testID="theme-toggle"
+              icon={isDark ? Moon : Sun}
+              iconTone="accent"
+              title={t('sidebar.menu.darkMode')}
               accessibilityLabel={
                 isDark ? t('home.switchThemeLightA11y') : t('home.switchThemeDarkA11y')
               }
-              testID="theme-toggle"
-            >
-              {themeLabel}
-            </Button>
+              switchValue={isDark}
+              onPress={toggleTheme}
+            />
+          </ListGroup>
+        </FadeInView>
 
-            <Button
-              variant="secondary"
-              onPress={handleSignOut}
-              loading={isSigningOut}
+        {/* Danger zone */}
+        <FadeInView index={5}>
+          <SectionLabel
+            title={t('settings.section.danger')}
+            color={theme.colors.negativeText}
+            typography={labelTypography}
+          />
+          <ListGroup style={{ borderColor: `${theme.colors.negative}47` }}>
+            <ListRow
               testID="sign-out-button"
+              icon={LogOut}
+              danger
+              title={t('settings.action.logout')}
               accessibilityLabel={t('settings.action.logout')}
-            >
-              {t('settings.action.logout')}
-            </Button>
-          </View>
-        </View>
-      </ScrollView>
+              disabled={isSigningOut}
+              onPress={() => {
+                triggerHaptic('warning');
+                handleSignOut();
+              }}
+              trailing={
+                isSigningOut ? (
+                  <ActivityIndicator
+                    size="small"
+                    color={theme.colors.negativeText}
+                    testID="sign-out-button-loading"
+                  />
+                ) : undefined
+              }
+            />
+          </ListGroup>
+        </FadeInView>
+
+        {appVersion ? (
+          <Text
+            style={[theme.typography.caption, styles.version, { color: theme.colors.textMuted }]}
+            testID="more-app-version"
+          >
+            {t('more.version', { version: appVersion })}
+          </Text>
+        ) : null}
+      </View>
     </ScreenContainer>
   );
 }
 
 const styles = StyleSheet.create({
-  scrollContent: {
-    paddingBottom: 32,
-  },
   container: {
-    gap: 16,
+    gap: 20,
     width: '100%',
+    paddingBottom: 8,
   },
-  card: {
-    padding: 20,
-    borderWidth: 1,
-  },
-  profileHeaderRow: {
+  profileRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    gap: 14,
   },
   profileInfo: {
     flex: 1,
+    gap: 2,
   },
-  nameText: {
-    marginBottom: 4,
+  sectionLabel: {
+    marginBottom: 8,
+    marginHorizontal: 6,
   },
-  emailText: {
-    marginBottom: 0,
-  },
-  linksGroup: {
-    gap: 10,
-  },
-  linkCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 16,
-    borderWidth: 1,
-    minHeight: 56,
-  },
-  linkIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginEnd: 12,
-  },
-  linkTextContainer: {
-    flex: 1,
-    marginEnd: 8,
-  },
-  actions: {
-    gap: 12,
+  version: {
+    textAlign: 'center',
+    marginTop: 4,
   },
 });

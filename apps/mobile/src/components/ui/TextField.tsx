@@ -9,9 +9,16 @@ import {
   StyleProp,
   ViewStyle,
 } from 'react-native';
+import Animated, {
+  interpolateColor,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from 'react-native-reanimated';
 import { Eye, EyeOff } from 'lucide-react-native';
 import { useTheme } from '../../theme';
 import { useI18n } from '../../i18n';
+import { useReduceMotion } from '../motion';
 
 export interface TextFieldProps extends Omit<TextInputProps, 'secureTextEntry'> {
   label?: string;
@@ -40,16 +47,25 @@ export const TextField = forwardRef<TextInput, TextFieldProps>(function TextFiel
 ) {
   const { theme } = useTheme();
   const { t } = useI18n();
-  const [isFocused, setIsFocused] = useState(false);
+  const reduceMotion = useReduceMotion();
   const [showPassword, setShowPassword] = useState(false);
+  const focus = useSharedValue(0);
 
   const hasError = Boolean(error);
+  const idleBorder = theme.colors.border;
+  const focusBorder = theme.colors.accent;
+  const errorBorder = theme.colors.negative;
 
-  const borderColor = hasError
-    ? theme.colors.negative
-    : isFocused
-      ? theme.colors.accent
-      : theme.colors.border;
+  // Border colour eases between idle and focused on the UI thread; errors always win.
+  const wrapperAnimatedStyle = useAnimatedStyle(() => ({
+    borderColor: hasError
+      ? errorBorder
+      : interpolateColor(focus.value, [0, 1], [idleBorder, focusBorder]),
+  }));
+
+  const animateFocus = (to: 0 | 1) => {
+    focus.value = reduceMotion ? to : withTiming(to, { duration: theme.motion.duration.fast });
+  };
 
   const togglePasswordLabel = showPassword
     ? t('auth.password.hide')
@@ -71,15 +87,14 @@ export const TextField = forwardRef<TextInput, TextFieldProps>(function TextFiel
         </Text>
       ) : null}
 
-      <View
+      <Animated.View
         style={[
           styles.inputWrapper,
           {
             backgroundColor: editable ? theme.colors.surface : theme.colors.surfaceHover,
-            borderColor,
-            borderRadius: theme.radius.md,
-            borderWidth: isFocused ? 1.5 : 1,
+            borderRadius: theme.radius.lg,
           },
+          wrapperAnimatedStyle,
         ]}
       >
         <TextInput
@@ -97,12 +112,13 @@ export const TextField = forwardRef<TextInput, TextFieldProps>(function TextFiel
           placeholderTextColor={theme.colors.textMuted}
           secureTextEntry={isPassword && !showPassword}
           editable={editable}
+          selectionColor={theme.colors.accent}
           onFocus={(e) => {
-            setIsFocused(true);
+            animateFocus(1);
             onFocus?.(e);
           }}
           onBlur={(e) => {
-            setIsFocused(false);
+            animateFocus(0);
             onBlur?.(e);
           }}
           aria-invalid={hasError}
@@ -128,7 +144,7 @@ export const TextField = forwardRef<TextInput, TextFieldProps>(function TextFiel
             )}
           </Pressable>
         ) : null}
-      </View>
+      </Animated.View>
 
       {hasError ? (
         <Text
@@ -168,17 +184,18 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   label: {
-    marginBottom: 6,
+    marginBottom: 8,
   },
   inputWrapper: {
-    minHeight: 48,
+    minHeight: 52,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 12,
+    paddingHorizontal: 16,
+    borderWidth: 1.5,
   },
   input: {
     flex: 1,
-    minHeight: 48,
+    minHeight: 52,
     paddingVertical: 12,
   },
   passwordInputPadding: {

@@ -1,11 +1,13 @@
 import React from 'react';
-import { View, Text, Pressable, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import type { Subscription, CurrencyCode } from '@haseela/shared';
 import { daysUntilDate } from '@haseela/shared';
-import { ChevronRight, Repeat } from 'lucide-react-native';
+import { Repeat } from 'lucide-react-native';
 import { useTheme } from '../../theme';
 import { useI18n } from '../../i18n';
 import { parseCalendarDate } from '../../utils/calendarDate';
+import { Chevron, IconTile } from '../ui';
+import { PressableScale } from '../motion';
 
 export interface SubscriptionRowProps {
   subscription: Subscription;
@@ -72,35 +74,23 @@ function SubscriptionRowBase({
   }${isDueSoon ? `, ${t('subscriptions.burden.dueSoon')}` : ''}`;
 
   return (
-    <Pressable
+    <PressableScale
       testID={testID ?? `subscription-row-${subscription.id}`}
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}
       onPress={() => onPress(subscription)}
-      style={({ pressed }) => [
+      scaleTo={theme.motion.press.scaleCard}
+      style={[
         styles.row,
         {
-          backgroundColor: pressed ? theme.colors.surfaceHover : theme.colors.surface,
+          backgroundColor: theme.colors.surface,
           borderColor: theme.colors.border,
+          borderRadius: theme.radius.xl,
         },
+        theme.shadows.sm,
       ]}
     >
-      <View
-        style={[
-          styles.iconContainer,
-          {
-            backgroundColor: isArchived
-              ? theme.colors.surfaceHover
-              : theme.colors.accentTint,
-            borderColor: theme.colors.border,
-          },
-        ]}
-      >
-        <Repeat
-          size={18}
-          color={isArchived ? theme.colors.textMuted : theme.colors.accent}
-        />
-      </View>
+      <IconTile icon={Repeat} tone={isArchived ? 'neutral' : 'accent'} size={44} />
 
       <View style={styles.content}>
         <View style={styles.topRow}>
@@ -115,7 +105,7 @@ function SubscriptionRowBase({
               theme.typography.bodySemiBold,
               styles.amount,
               {
-                color: isArchived ? theme.colors.textMuted : theme.colors.negative,
+                color: isArchived ? theme.colors.textMuted : theme.colors.negativeText,
               },
             ]}
           >
@@ -218,8 +208,8 @@ function SubscriptionRowBase({
         </Text>
       </View>
 
-      <ChevronRight size={18} color={theme.colors.textMuted} />
-    </Pressable>
+      <Chevron size={18} color={theme.colors.textMuted} />
+    </PressableScale>
   );
 }
 
@@ -229,25 +219,15 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
+    gap: 12,
+    paddingHorizontal: 14,
     paddingVertical: 14,
-    borderWidth: 1,
-    borderRadius: 14,
+    borderWidth: StyleSheet.hairlineWidth,
     marginBottom: 10,
-    minHeight: 64,
-  },
-  iconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    marginEnd: 12,
+    minHeight: 72,
   },
   content: {
     flex: 1,
-    marginEnd: 8,
   },
   topRow: {
     flexDirection: 'row',
@@ -271,7 +251,7 @@ const styles = StyleSheet.create({
   badge: {
     paddingHorizontal: 8,
     paddingVertical: 2,
-    borderRadius: 6,
+    borderRadius: 999,
   },
   badgeText: {
     fontSize: 11,

@@ -673,6 +673,8 @@ export const ar: Messages = {
   'more.notifications': 'الإشعارات',
   'more.notificationsDesc': 'التذكيرات والنشاط',
   'more.profile': 'الملف الشخصي',
+  'more.section.preferences': 'التفضيلات',
+  'more.version': 'الإصدار {version}',
 
   'archive.title': 'الأرشيف',
   'archive.subtitle': 'العملاء والاشتراكات المتوقفة مع حفظ السجلات التاريخية',
