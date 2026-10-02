@@ -1,6 +1,6 @@
 import { CurrencyCode } from '../types/finance';
 import { createCurrencyFormatter, type NumberFormatOptions } from './format';
-import { DEFAULT_LOCALE, intlTagFor, type Locale } from './locales';
+import { DEFAULT_LOCALE, type Locale } from './locales';
 
 export const supportedCurrencies: { code: CurrencyCode; label: string }[] = [
   { code: 'USD', label: 'USD ($)' },
@@ -23,16 +23,20 @@ export const makeCurrencyFormatter = (currency: CurrencyCode, options?: NumberFo
   createCurrencyFormatter(currency, locale, options)
 );
 
-// Unicode bidi isolates: wrap a string so it always renders as an isolated LTR
-// run, regardless of the surrounding paragraph direction. This is the only way
-// to guarantee a mixed number + Arabic-currency-name string like
-// "12.00 دولار أمريكي" renders number-first inside an RTL layout — otherwise
-// the bidi algorithm reorders the runs and you get "دولار أمريكي 12.00".
+// Unicode bidi isolates. Digits and currency symbols are direction-neutral, so an amount's visual
+// order otherwise depends on the paragraph it lands in. English reads "$1,200.00"; Arabic reads the
+// number first and then the symbol, so on screen the symbol sits to the LEFT: "$ 1,200.00".
+const RLI = '⁧';
 const LRI = '⁦';
 const PDI = '⁩';
-const ltrIsolate = (s: string) => `${LRI}${s}${PDI}`;
 
-export const makeLongCurrencyFormatter = (currency: CurrencyCode, options?: NumberFormatOptions, locale: Locale = DEFAULT_LOCALE) => {
+const symbolFor = (currency: CurrencyCode) => new Intl.NumberFormat('en-US', {
+  style: 'currency',
+  currency,
+  currencyDisplay: 'narrowSymbol',
+}).formatToParts(0).find((part) => part.type === 'currency')?.value || currency;
+
+const fractionDigitsFor = (currency: CurrencyCode, options?: NumberFormatOptions) => {
   const currencyDefaults = new Intl.NumberFormat('en-US', { style: 'currency', currency }).resolvedOptions();
   const defaultMax = currencyDefaults.maximumFractionDigits ?? 2;
   const defaultMin = currencyDefaults.minimumFractionDigits ?? defaultMax;
@@ -41,65 +45,38 @@ export const makeLongCurrencyFormatter = (currency: CurrencyCode, options?: Numb
     options?.minimumFractionDigits ?? (options?.maximumFractionDigits === 0 ? 0 : defaultMin),
     maximumFractionDigits,
   );
-  // The number itself is always rendered with Latin digits in en-US grouping
-  // so it looks the same in Arabic and English mode.
+  return { minimumFractionDigits, maximumFractionDigits };
+};
+
+const makeSymbolCurrencyFormatter = (currency: CurrencyCode, options: NumberFormatOptions | undefined, locale: Locale) => {
+  // Latin digits in en-US grouping so amounts look the same in Arabic and English mode.
   const number = new Intl.NumberFormat('en-US', {
-    minimumFractionDigits,
-    maximumFractionDigits,
+    ...fractionDigitsFor(currency, options),
     useGrouping: options?.useGrouping,
   });
-  // The currency *name* (e.g. "دولار أمريكي", "US dollars") is sourced from
-  // the selected currency code so it changes when the user changes currency.
-  const name = new Intl.NumberFormat(intlTagFor(locale), {
-    style: 'currency',
-    currency,
-    currencyDisplay: 'name',
-    numberingSystem: 'latn',
-  })
-    .formatToParts(0)
-    .find((part) => part.type === 'currency')?.value || currency;
-
-  // Long format is *prose* (the currency name is a word, not a symbol), so we
-  // let the surrounding paragraph direction control the visual order: in an
-  // RTL paragraph the Arabic name sits to the left of the number, which is
-  // the natural Arabic reading order; in an LTR paragraph the number leads.
-  // (Compact format gets a different treatment below — see ltrIsolate.)
+  const symbol = symbolFor(currency);
+  const format = (value: number) => {
+    const magnitude = number.format(Math.abs(value));
+    const sign = value < 0 ? '-' : '';
+    if (locale === 'ar') return `${RLI}${LRI}${sign}${magnitude}${PDI} ${symbol}${PDI}`;
+    return `${sign}${symbol}${magnitude}`;
+  };
   return {
-    format: (value: number) => `${number.format(value)} ${name}`,
-    formatToParts: (value: number) => [
-      ...number.formatToParts(value),
-      { type: 'literal' as const, value: ' ' },
-      { type: 'currency' as const, value: name },
-    ],
+    format,
+    formatToParts: (value: number) => {
+      const numberParts = number.formatToParts(value);
+      const currencyPart = { type: 'currency' as const, value: symbol };
+      return locale === 'ar'
+        ? [...numberParts, { type: 'literal' as const, value: ' ' }, currencyPart]
+        : [currencyPart, ...numberParts];
+    },
   };
 };
 
-export const makeCompactCurrencyFormatter = (currency: CurrencyCode, options?: NumberFormatOptions, locale: Locale = DEFAULT_LOCALE) => {
-  const currencyDefaults = new Intl.NumberFormat('en-US', { style: 'currency', currency }).resolvedOptions();
-  const defaultMaximumFractionDigits = currencyDefaults.maximumFractionDigits ?? 2;
-  const defaultMinimumFractionDigits = currencyDefaults.minimumFractionDigits ?? defaultMaximumFractionDigits;
-  const maximumFractionDigits = options?.maximumFractionDigits ?? defaultMaximumFractionDigits;
-  const minimumFractionDigits = Math.min(
-    options?.minimumFractionDigits ?? (options?.maximumFractionDigits === 0 ? 0 : defaultMinimumFractionDigits),
-    maximumFractionDigits,
-  );
-  const number = new Intl.NumberFormat(locale === 'ar' ? 'en-US' : intlTagFor(locale), {
-    minimumFractionDigits,
-    maximumFractionDigits,
-    useGrouping: options?.useGrouping,
-  });
-  const symbol = new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency,
-    currencyDisplay: 'narrowSymbol',
-  }).formatToParts(0).find((part) => part.type === 'currency')?.value || currency;
+export const makeLongCurrencyFormatter = (currency: CurrencyCode, options?: NumberFormatOptions, locale: Locale = DEFAULT_LOCALE) => (
+  makeSymbolCurrencyFormatter(currency, options, locale)
+);
 
-  return {
-    format: (value: number) => ltrIsolate(`${number.format(value)} ${symbol}`),
-    formatToParts: (value: number) => [
-      ...number.formatToParts(value),
-      { type: 'literal' as const, value: ' ' },
-      { type: 'currency' as const, value: symbol },
-    ],
-  };
-};
+export const makeCompactCurrencyFormatter = (currency: CurrencyCode, options?: NumberFormatOptions, locale: Locale = DEFAULT_LOCALE) => (
+  makeSymbolCurrencyFormatter(currency, options, locale)
+);

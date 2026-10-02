@@ -28,12 +28,13 @@ describe('buildCountFrames', () => {
     expect([...down].sort((a, b) => b - a)).toEqual(down);
   });
 
-  it('uses the locale formatter, so Arabic frames are Arabic', () => {
+  it('uses the locale formatter, so Arabic frames keep the Arabic amount layout', () => {
     const frames = buildCountFrames(0, 1500, formatEgpAr);
 
     expect(frames[COUNT_STEPS]).toBe(formatEgpAr(1500));
-    expect(frames[COUNT_STEPS]).toContain('جنيه');
-    expect(frames[0]).toContain('جنيه');
+    // Arabic amounts are an RTL isolate holding the LTR number followed by the symbol.
+    expect(frames[COUNT_STEPS]).toBe('⁧⁦1,500.00⁩ E£⁩');
+    expect(frames[0]).toBe('⁧⁦0.00⁩ E£⁩');
   });
 });
 

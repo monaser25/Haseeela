@@ -748,7 +748,7 @@ describe('NewTransactionScreen and TransactionDetailScreen', () => {
       const { getByTestId: getPending, unmount: unmountPending } = renderWithProviders(<TransactionDetailScreen />);
       await waitFor(() => expect(getPending('detail-mark-as-paid')).toBeTruthy());
       fireEvent.press(getPending('detail-mark-as-paid'));
-      expect(getPending('complete-modal-amount').props.children).toContain('EGP');
+      expect(getPending('complete-modal-amount').props.children).toContain('E£');
       unmountPending();
 
       // 2. Revert modal
@@ -756,7 +756,7 @@ describe('NewTransactionScreen and TransactionDetailScreen', () => {
       const { getByTestId: getRevert, unmount: unmountRevert } = renderWithProviders(<TransactionDetailScreen />);
       await waitFor(() => expect(getRevert('detail-revert-to-pending')).toBeTruthy());
       fireEvent.press(getRevert('detail-revert-to-pending'));
-      expect(getRevert('revert-modal-amount').props.children).toContain('EGP');
+      expect(getRevert('revert-modal-amount').props.children).toContain('E£');
       unmountRevert();
 
       // 3. Delete modal
@@ -764,7 +764,7 @@ describe('NewTransactionScreen and TransactionDetailScreen', () => {
       const { getByTestId: getDelete } = renderWithProviders(<TransactionDetailScreen />);
       await waitFor(() => expect(getDelete('tx-delete-button')).toBeTruthy());
       fireEvent.press(getDelete('tx-delete-button'));
-      expect(getDelete('delete-modal-amount').props.children).toContain('EGP');
+      expect(getDelete('delete-modal-amount').props.children).toContain('E£');
     });
 
     it('HTTP errors on update do not lose form input in detail screen', async () => {

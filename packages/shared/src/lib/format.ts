@@ -27,9 +27,35 @@ export function createCurrencyFormatter(currency: string, locale: Locale, option
   return createNumberFormatter(locale, {
     style: 'currency',
     currency,
-    currencyDisplay: locale === 'ar' ? 'name' : 'symbol',
+    currencyDisplay: 'narrowSymbol',
     ...options,
   });
+}
+
+// Bidi isolates. Digits and "$" are direction-neutral, so without isolates the visual order of an
+// amount depends on whatever paragraph it lands in. Arabic money reads number-then-currency (like
+// "100 ر.س" in Gulf fintech apps), so the symbol must sit to the LEFT of the number on screen.
+const RLI = '⁧';
+const LRI = '⁦';
+const PDI = '⁩';
+
+/** "$1,200.00" in English; in Arabic the number followed by the symbol, always shown as "$ 1,200.00". */
+export function formatCurrency(amount: number, currency: string, locale: Locale, options?: NumberFormatOptions) {
+  if (locale !== 'ar') {
+    return createCurrencyFormatter(currency, locale, options).format(amount);
+  }
+  const parts = new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency,
+    currencyDisplay: 'narrowSymbol',
+    ...options,
+  }).formatToParts(amount);
+  const symbol = parts.find((part) => part.type === 'currency')?.value ?? currency;
+  const number = parts
+    .filter((part) => part.type !== 'currency' && part.type !== 'literal')
+    .map((part) => part.value)
+    .join('');
+  return `${RLI}${LRI}${number}${PDI} ${symbol}${PDI}`;
 }
 
 function formatArabicDate(date: Date, options?: DateFormatOptions) {
@@ -52,10 +78,6 @@ export function formatDate(date: DateValue, locale: Locale, options?: DateFormat
   const value = toDate(date);
   if (locale === 'ar') return formatArabicDate(value, options);
   return createDateFormatter(locale, options).format(value);
-}
-
-export function formatCurrency(amount: number, currency: string, locale: Locale, options?: NumberFormatOptions) {
-  return createCurrencyFormatter(currency, locale, options).format(amount);
 }
 
 export function formatNumber(value: number, locale: Locale, options?: NumberFormatOptions) {
