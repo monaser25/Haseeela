@@ -139,6 +139,7 @@ export const executeFencedFinancialCleanupTransaction = async (
     }
 
     await tx.notification.deleteMany({ where: { userId } });
+    await tx.deviceToken.deleteMany({ where: { userId } });
 
     const userInvoices = await tx.invoice.findMany({
       where: { userId },
