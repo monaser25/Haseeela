@@ -155,6 +155,10 @@ export const recordSubscriptionPayment = async (
   return { transaction, subscription: updatedSubscription };
 };
 
+// Catching up several overdue billing periods costs a few round trips per period; Prisma's
+// default 5s interactive-transaction timeout rolls the whole catch-up back on every retry.
+export const RECURRING_TRANSACTION_OPTIONS = { maxWait: 10_000, timeout: 30_000 };
+
 export const runDueRecurringPaymentsInTransaction = async (
   tx: Prisma.TransactionClient,
   userId: string,
@@ -222,7 +226,10 @@ export const runDueRecurringPaymentsInTransaction = async (
 };
 
 export const runDueRecurringPayments = async (userId: string, today: Date | string = new Date()) => {
-  return prisma.$transaction((tx) => runDueRecurringPaymentsInTransaction(tx, userId, today));
+  return prisma.$transaction(
+    (tx) => runDueRecurringPaymentsInTransaction(tx, userId, today),
+    RECURRING_TRANSACTION_OPTIONS,
+  );
 };
 
 export const createPendingPayment = async (

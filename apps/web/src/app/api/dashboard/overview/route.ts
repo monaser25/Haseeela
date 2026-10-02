@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { authenticateRequest, getUserId } from '@/server/auth';
-import { runDueRecurringPaymentsInTransaction } from '@/server/recurring-billing';
+import { RECURRING_TRANSACTION_OPTIONS, runDueRecurringPaymentsInTransaction } from '@/server/recurring-billing';
 import { prisma } from '@/server/prisma';
 import { withApiError } from '@/server/errors';
 
@@ -28,7 +28,7 @@ export const GET = async (request: Request) => withApiError(request, async () =>
       subscriptions: nextSubscriptions,
       transactions: nextTransactions,
     };
-  });
+  }, RECURRING_TRANSACTION_OPTIONS);
 
   return NextResponse.json({ clients, subscriptions, transactions });
 });
