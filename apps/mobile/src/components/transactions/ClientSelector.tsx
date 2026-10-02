@@ -4,7 +4,7 @@ import {
   Text,
   Pressable,
   Modal,
-  FlatList,
+  ScrollView,
   StyleSheet,
 } from 'react-native';
 import type { Client } from '@haseela/shared';
@@ -139,13 +139,16 @@ export function ClientSelector({
               {!selectedClientId && <Check size={18} color={theme.colors.accent} />}
             </Pressable>
 
-            <FlatList
-              data={clients}
-              keyExtractor={(item) => item.id}
-              renderItem={({ item }) => {
+            <ScrollView
+              style={styles.list}
+              keyboardShouldPersistTaps="handled"
+              nestedScrollEnabled
+            >
+              {clients.map((item) => {
                 const isSelected = item.id === selectedClientId;
                 return (
                   <Pressable
+                    key={item.id}
                     testID={`client-option-${item.id}`}
                     accessibilityRole="button"
                     accessibilityLabel={item.name}
@@ -173,9 +176,8 @@ export function ClientSelector({
                     {isSelected && <Check size={18} color={theme.colors.accent} />}
                   </Pressable>
                 );
-              }}
-              style={styles.list}
-            />
+              })}
+            </ScrollView>
           </Pressable>
         </Pressable>
       </Modal>

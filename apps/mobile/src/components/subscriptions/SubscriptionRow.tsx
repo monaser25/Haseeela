@@ -10,11 +10,11 @@ import { parseCalendarDate } from '../../utils/calendarDate';
 export interface SubscriptionRowProps {
   subscription: Subscription;
   currency: CurrencyCode;
-  onPress: () => void;
+  onPress: (item: Subscription) => void;
   testID?: string;
 }
 
-export function SubscriptionRow({
+function SubscriptionRowBase({
   subscription,
   currency,
   onPress,
@@ -76,7 +76,7 @@ export function SubscriptionRow({
       testID={testID ?? `subscription-row-${subscription.id}`}
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}
-      onPress={onPress}
+      onPress={() => onPress(subscription)}
       style={({ pressed }) => [
         styles.row,
         {
@@ -222,6 +222,8 @@ export function SubscriptionRow({
     </Pressable>
   );
 }
+
+export const SubscriptionRow = React.memo(SubscriptionRowBase);
 
 const styles = StyleSheet.create({
   row: {

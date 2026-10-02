@@ -22,7 +22,14 @@ export interface ScreenContainerProps {
   style?: StyleProp<ViewStyle>;
   contentContainerStyle?: StyleProp<ViewStyle>;
   showOfflineBanner?: boolean;
+  /**
+   * When false the children are not wrapped in a ScrollView and fill the available height.
+   * Use this for screens whose main content is a FlatList/SectionList, so the list is the
+   * scroll container (a VirtualizedList inside a plain ScrollView loses windowing).
+   */
   scrollable?: boolean;
+  /** When false the content area has no built-in padding (the screen lays itself out). */
+  padded?: boolean;
   testID?: string;
   refreshControl?: React.ReactElement<RefreshControlProps>;
   edges?: readonly Edge[];
@@ -36,6 +43,7 @@ export function ScreenContainer({
   contentContainerStyle,
   showOfflineBanner = true,
   scrollable = true,
+  padded = true,
   testID,
   refreshControl,
   edges = ['top', 'left', 'right', 'bottom'],
@@ -45,14 +53,23 @@ export function ScreenContainer({
   const isOnline = useIsOnline();
 
   const content = (
-    <View style={[styles.innerContainer, contentContainerStyle]}>
+    <View
+      style={[
+        styles.innerContainer,
+        !padded && styles.unpadded,
+        !scrollable && styles.fill,
+        contentContainerStyle,
+      ]}
+    >
       {showOfflineBanner && !isOnline ? (
-        <Banner
-          tone="warning"
-          title={t('offline.title')}
-          message={t('auth.offline.banner')}
-          testID="offline-banner"
-        />
+        <View style={padded ? undefined : styles.unpaddedBanner}>
+          <Banner
+            tone="warning"
+            title={t('offline.title')}
+            message={t('auth.offline.banner')}
+            testID="offline-banner"
+          />
+        </View>
       ) : null}
       {children}
     </View>
@@ -118,6 +135,19 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     paddingHorizontal: 24,
     paddingVertical: 20,
+  },
+  unpadded: {
+    paddingHorizontal: 0,
+    paddingVertical: 0,
+  },
+  unpaddedBanner: {
+    paddingHorizontal: 16,
+    paddingTop: 8,
+  },
+  // Non-scrolling mode: without flex the content collapses to its intrinsic height, which
+  // gives an inner flex:1 list zero height.
+  fill: {
+    flex: 1,
   },
   footerContainer: {
     width: '100%',

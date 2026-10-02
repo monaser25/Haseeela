@@ -10,7 +10,7 @@ export interface ClientRowProps {
   client: Client;
   currency: string;
   totalPaid: number;
-  onPress: () => void;
+  onPress: (item: Client) => void;
   testID?: string;
 }
 
@@ -21,7 +21,7 @@ function getInitials(name: string): string {
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
 
-export function ClientRow({
+function ClientRowBase({
   client,
   currency,
   totalPaid,
@@ -88,7 +88,7 @@ export function ClientRow({
       testID={testID ?? `client-row-${client.id}`}
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}
-      onPress={onPress}
+      onPress={() => onPress(client)}
       style={({ pressed }) => [
         styles.row,
         {
@@ -189,6 +189,8 @@ export function ClientRow({
     </Pressable>
   );
 }
+
+export const ClientRow = React.memo(ClientRowBase);
 
 const styles = StyleSheet.create({
   row: {

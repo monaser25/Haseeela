@@ -1,4 +1,5 @@
 import React from 'react';
+import { ScrollView } from 'react-native';
 import { render, fireEvent, waitFor, act, cleanup } from '@testing-library/react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { QueryClientProvider } from '@tanstack/react-query';
@@ -110,6 +111,12 @@ describe('InvoicesScreen & More Navigation', () => {
 
     fireEvent.press(invoicesLink);
     expect(mockPush).toHaveBeenCalledWith('/(app)/invoices');
+  });
+
+  it('uses the invoice list as the only scroll container (no list nested in a ScrollView)', async () => {
+    const { findByTestId, UNSAFE_getAllByType } = render(<InvoicesScreen />, { wrapper });
+    await findByTestId('invoice-row-inv-1');
+    expect(UNSAFE_getAllByType(ScrollView)).toHaveLength(1);
   });
 
   it('renders invoices list with summary tiles grouped by currency and 30-day cutoff', async () => {

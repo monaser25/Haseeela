@@ -32,7 +32,7 @@ export interface TransactionRowProps {
   showPendingActions?: boolean;
 }
 
-export function TransactionRow({
+function TransactionRowBase({
   transaction,
   currency,
   onPress,
@@ -254,6 +254,8 @@ export function TransactionRow({
     </Pressable>
   );
 }
+
+export const TransactionRow = React.memo(TransactionRowBase);
 
 const styles = StyleSheet.create({
   row: {
