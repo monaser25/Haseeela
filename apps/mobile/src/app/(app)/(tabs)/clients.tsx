@@ -139,6 +139,21 @@ export default function ClientsScreen() {
     setFilter((prev) => (prev === 'archived' ? 'active' : 'archived'));
   }, []);
 
+  const keyExtractor = useCallback((item: Client) => item.id, []);
+
+  const renderItem = useCallback(
+    ({ item }: { item: Client }) => (
+      <ClientRow
+        client={item}
+        currency={currency}
+        totalPaid={clientRevenueMap.get(item.id) ?? 0}
+        onPress={handleClientPress}
+        testID={`client-row-${item.id}`}
+      />
+    ),
+    [currency, clientRevenueMap, handleClientPress]
+  );
+
   // Loading skeleton when no cached data exists
   if (isLoading && !overview) {
     return (
@@ -174,7 +189,12 @@ export default function ClientsScreen() {
   }
 
   return (
-    <ScreenContainer testID="clients-tab-screen" edges={['top', 'left', 'right']}>
+    <ScreenContainer
+      testID="clients-tab-screen"
+      edges={['top', 'left', 'right']}
+      scrollable={false}
+      padded={false}
+    >
       {/* Compact Header */}
       <View style={styles.header}>
         <View style={styles.titleRow}>
@@ -244,17 +264,11 @@ export default function ClientsScreen() {
       <FlatList
         testID="clients-list"
         data={filteredClients}
-        extraData={filteredClients}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <ClientRow
-            client={item}
-            currency={currency}
-            totalPaid={clientRevenueMap.get(item.id) ?? 0}
-            onPress={() => handleClientPress(item)}
-            testID={`client-row-${item.id}`}
-          />
-        )}
+        keyExtractor={keyExtractor}
+        renderItem={renderItem}
+        keyboardShouldPersistTaps="handled"
+        initialNumToRender={12}
+        windowSize={9}
         ListHeaderComponent={
           <View style={styles.listHeader}>
             {/* Revenue Summary Card */}

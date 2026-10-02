@@ -182,14 +182,17 @@ export default function TransactionsScreen() {
     return Array.from(groups.values());
   }, [filteredTransactions, getSectionTitle]);
 
-  const handleRowPress = (tx: Transaction) => {
-    router.push({ pathname: '/transaction/[id]', params: { id: tx.id } } as any);
-  };
+  const handleRowPress = useCallback(
+    (tx: Transaction) => {
+      router.push({ pathname: '/transaction/[id]', params: { id: tx.id } } as any);
+    },
+    [router]
+  );
 
-  const handleOpenCompleteModal = (tx: Transaction) => {
+  const handleOpenCompleteModal = useCallback((tx: Transaction) => {
     setFeedbackMessage(null);
     setCompleteTarget(tx);
-  };
+  }, []);
 
   const handleConfirmComplete = async (id: string, completedDate: string) => {
     if (!isOnline || completeMutation.isPending) return;
@@ -198,10 +201,55 @@ export default function TransactionsScreen() {
     setCompleteTarget(null);
   };
 
-  const handleOpenRevertModal = (tx: Transaction) => {
+  const handleOpenRevertModal = useCallback((tx: Transaction) => {
     setFeedbackMessage(null);
     setRevertTarget(tx);
-  };
+  }, []);
+
+  const keyExtractor = useCallback((item: Transaction) => item.id, []);
+
+  const renderSectionHeader = useCallback(
+    ({ section }: { section: TransactionSection }) => {
+      const isPositive = section.totalAmount >= 0;
+      const formattedSum = formatCurrency(Math.abs(section.totalAmount), currency);
+      const signedSum = `${isPositive ? '+' : '-'}${formattedSum}`;
+
+      return (
+        <View
+          style={[styles.sectionHeader, { backgroundColor: theme.colors.bg }]}
+          testID={`section-header-${section.dateKey}`}
+        >
+          <Text style={[theme.typography.captionUpper, { color: theme.colors.textSecondary }]}>
+            {section.title}
+          </Text>
+          <Text
+            style={[
+              theme.typography.caption,
+              styles.sectionTotal,
+              { color: isPositive ? theme.colors.positiveText : theme.colors.negativeText },
+            ]}
+          >
+            {signedSum}
+          </Text>
+        </View>
+      );
+    },
+    [currency, formatCurrency, theme]
+  );
+
+  const renderItem = useCallback(
+    ({ item }: { item: Transaction }) => (
+      <TransactionRow
+        transaction={item}
+        currency={currency}
+        onPress={handleRowPress}
+        onCompletePending={handleOpenCompleteModal}
+        onRevertPending={handleOpenRevertModal}
+        showPendingActions={filter === 'pending' || Boolean(item.expectedDate && item.status === 'COMPLETED')}
+      />
+    ),
+    [currency, filter, handleRowPress, handleOpenCompleteModal, handleOpenRevertModal]
+  );
 
   const handleConfirmRevert = async (id: string) => {
     if (!isOnline || revertMutation.isPending) return;
@@ -325,6 +373,7 @@ export default function TransactionsScreen() {
       edges={['top', 'left', 'right']}
       showOfflineBanner={false}
       scrollable={false}
+      padded={false}
     >
       <View style={styles.container}>
         {/* Title Header */}
@@ -474,9 +523,10 @@ export default function TransactionsScreen() {
           <SectionList
             testID="transactions-section-list"
             sections={sections}
-            keyExtractor={(item) => item.id}
-            initialNumToRender={50}
-            maxToRenderPerBatch={50}
+            keyExtractor={keyExtractor}
+            initialNumToRender={15}
+            maxToRenderPerBatch={15}
+            windowSize={9}
             refreshControl={
               <RefreshControl
                 refreshing={Boolean(isRefetching)}
@@ -485,48 +535,9 @@ export default function TransactionsScreen() {
                 colors={[theme.colors.accent]}
               />
             }
-            renderSectionHeader={({ section }) => {
-              const isPositive = section.totalAmount >= 0;
-              const formattedSum = formatCurrency(Math.abs(section.totalAmount), currency);
-              const signedSum = `${isPositive ? '+' : '-'}${formattedSum}`;
-
-              return (
-                <View
-                  style={[
-                    styles.sectionHeader,
-                    {
-                      backgroundColor: theme.colors.bg,
-                    },
-                  ]}
-                  testID={`section-header-${section.dateKey}`}
-                >
-                  <Text style={[theme.typography.captionUpper, { color: theme.colors.textSecondary }]}>
-                    {section.title}
-                  </Text>
-                  <Text
-                    style={[
-                      theme.typography.caption,
-                      styles.sectionTotal,
-                      {
-                        color: isPositive ? theme.colors.positiveText : theme.colors.negativeText,
-                      },
-                    ]}
-                  >
-                    {signedSum}
-                  </Text>
-                </View>
-              );
-            }}
-            renderItem={({ item }) => (
-              <TransactionRow
-                transaction={item}
-                currency={currency}
-                onPress={handleRowPress}
-                onCompletePending={handleOpenCompleteModal}
-                onRevertPending={handleOpenRevertModal}
-                showPendingActions={filter === 'pending' || Boolean(item.expectedDate && item.status === 'COMPLETED')}
-              />
-            )}
+            renderSectionHeader={renderSectionHeader}
+            renderItem={renderItem}
+            keyboardShouldPersistTaps="handled"
             contentContainerStyle={styles.listContent}
           />
         )}

@@ -1,5 +1,6 @@
 import React from 'react';
 import { render, fireEvent, waitFor, cleanup, act } from '@testing-library/react-native';
+import { ScrollView } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import TransactionsScreen from '../(app)/(tabs)/transactions';
@@ -108,6 +109,13 @@ describe('TransactionsScreen Tab', () => {
       wrap,
     };
   }
+
+  it('uses the transaction list as the only scroll container and does not collapse it', async () => {
+    const { findByTestId, UNSAFE_getAllByType, getByText } = renderTransactionsScreen();
+    await findByTestId('transactions-section-list');
+    expect(UNSAFE_getAllByType(ScrollView)).toHaveLength(1);
+    expect(getByText('Website Redesign')).toBeTruthy();
+  });
 
   it('renders loading skeleton when overview is loading with no cache', () => {
     mockServer.setPending('/api/dashboard/overview');

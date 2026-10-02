@@ -107,6 +107,21 @@ export default function InvoicesScreen() {
     [router]
   );
 
+  const keyExtractor = useCallback((item: Invoice) => item.id, []);
+
+  const renderItem = useCallback(
+    ({ item }: { item: Invoice }) => (
+      <View style={styles.rowWrapper}>
+        <InvoiceRow
+          invoice={item}
+          onPress={handleInvoicePress}
+          testID={`invoice-row-${item.id}`}
+        />
+      </View>
+    ),
+    [handleInvoicePress]
+  );
+
   // Cold offline with empty cache
   if (!isOnline && !invoicesData) {
     return (
@@ -207,7 +222,12 @@ export default function InvoicesScreen() {
   ];
 
   return (
-    <ScreenContainer testID="invoices-list-screen" edges={['top', 'left', 'right']}>
+    <ScreenContainer
+      testID="invoices-list-screen"
+      edges={['top', 'left', 'right']}
+      scrollable={false}
+      padded={false}
+    >
       {/* Top Navigation Bar */}
       <View style={styles.navBar}>
         <Pressable
@@ -292,16 +312,11 @@ export default function InvoicesScreen() {
       {/* FlatList with Summary Cards and Filters in Header */}
       <FlatList
         data={filteredInvoices}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <View style={styles.rowWrapper}>
-            <InvoiceRow
-              invoice={item}
-              onPress={() => handleInvoicePress(item)}
-              testID={`invoice-row-${item.id}`}
-            />
-          </View>
-        )}
+        keyExtractor={keyExtractor}
+        renderItem={renderItem}
+        keyboardShouldPersistTaps="handled"
+        initialNumToRender={12}
+        windowSize={9}
         refreshControl={
           <RefreshControl
             refreshing={isRefetching}

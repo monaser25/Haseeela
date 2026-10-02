@@ -1,5 +1,5 @@
 import React from 'react';
-import { Pressable } from 'react-native';
+import { Pressable, ScrollView } from 'react-native';
 import { render, fireEvent, waitFor, cleanup, act, screen } from '@testing-library/react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -289,6 +289,12 @@ describe('ClientsScreen Tab', () => {
     const { findByText } = renderClientsScreen();
     expect(await findByText('Server exploded')).toBeTruthy();
     expect(await findByText('Try again')).toBeTruthy();
+  });
+
+  it('uses the client list as the only scroll container (no list nested in a ScrollView)', async () => {
+    const { findByTestId, UNSAFE_getAllByType } = renderClientsScreen();
+    await findByTestId('clients-list');
+    expect(UNSAFE_getAllByType(ScrollView)).toHaveLength(1);
   });
 
   it('renders compact header with title, add button, and archive toggle', async () => {

@@ -10,11 +10,11 @@ import { InvoiceStatusBadge } from './InvoiceStatusBadge';
 
 export interface InvoiceRowProps {
   invoice: Invoice;
-  onPress: () => void;
+  onPress: (item: Invoice) => void;
   testID?: string;
 }
 
-export function InvoiceRow({
+function InvoiceRowBase({
   invoice,
   onPress,
   testID,
@@ -59,7 +59,7 @@ export function InvoiceRow({
       testID={testID ?? `invoice-row-${invoice.id}`}
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}
-      onPress={onPress}
+      onPress={() => onPress(invoice)}
       style={({ pressed }) => [
         styles.row,
         {
@@ -109,6 +109,8 @@ export function InvoiceRow({
     </Pressable>
   );
 }
+
+export const InvoiceRow = React.memo(InvoiceRowBase);
 
 const styles = StyleSheet.create({
   row: {

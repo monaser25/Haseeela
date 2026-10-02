@@ -120,6 +120,20 @@ export default function SubscriptionsScreen() {
     [router]
   );
 
+  const keyExtractor = useCallback((item: Subscription) => item.id, []);
+
+  const renderItem = useCallback(
+    ({ item }: { item: Subscription }) => (
+      <SubscriptionRow
+        subscription={item}
+        currency={currency}
+        onPress={handleSubscriptionPress}
+        testID={`subscription-row-${item.id}`}
+      />
+    ),
+    [currency, handleSubscriptionPress]
+  );
+
   const toggleArchive = useCallback(() => {
     setShowArchived((prev) => !prev);
   }, []);
@@ -215,7 +229,12 @@ export default function SubscriptionsScreen() {
   }
 
   return (
-    <ScreenContainer testID="subscriptions-list-screen" edges={['top', 'left', 'right']}>
+    <ScreenContainer
+      testID="subscriptions-list-screen"
+      edges={['top', 'left', 'right']}
+      scrollable={false}
+      padded={false}
+    >
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.titleRow}>
@@ -314,16 +333,11 @@ export default function SubscriptionsScreen() {
       <FlatList
         testID="subscriptions-list"
         data={filteredSubscriptions}
-        extraData={filteredSubscriptions}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <SubscriptionRow
-            subscription={item}
-            currency={currency}
-            onPress={() => handleSubscriptionPress(item)}
-            testID={`subscription-row-${item.id}`}
-          />
-        )}
+        keyExtractor={keyExtractor}
+        renderItem={renderItem}
+        keyboardShouldPersistTaps="handled"
+        initialNumToRender={12}
+        windowSize={9}
         ListHeaderComponent={
           <View style={styles.listHeader}>
             {/* Burden Card */}

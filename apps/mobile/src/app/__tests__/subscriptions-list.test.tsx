@@ -1,5 +1,5 @@
 import React from 'react';
-import { Pressable } from 'react-native';
+import { Pressable, ScrollView } from 'react-native';
 import { render, fireEvent, waitFor, act, cleanup, screen } from '@testing-library/react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -189,6 +189,12 @@ describe('SubscriptionsScreen & More Navigation', () => {
     fireEvent.press(link);
 
     expect(mockPush).toHaveBeenCalledWith('/(app)/subscriptions');
+  });
+
+  it('uses the subscription list as the only scroll container (no list nested in a ScrollView)', async () => {
+    const { findByTestId, UNSAFE_getAllByType } = renderWithProviders(<SubscriptionsScreen />);
+    await findByTestId('subscriptions-list');
+    expect(UNSAFE_getAllByType(ScrollView)).toHaveLength(1);
   });
 
   it('renders subscriptions list and computes monthly burden correctly', async () => {
