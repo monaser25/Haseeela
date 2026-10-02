@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { View, Text, TextInput, StyleSheet } from 'react-native';
 import { useRouter, useLocalSearchParams, Link } from 'expo-router';
 import { useAuth } from '../../auth';
+import { useAccountDeletionNotice, clearAccountDeletionNotice } from '../../auth/accountDeletionNotice';
 import {
   isEmailNotConfirmed,
   isAuthEmailRateLimited,
@@ -36,6 +37,7 @@ export default function LoginScreen() {
   const { theme } = useTheme();
   const { t } = useI18n();
   const isOnline = useIsOnline();
+  const deletionNotice = useAccountDeletionNotice();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -101,6 +103,7 @@ export default function LoginScreen() {
   };
 
   const handleLogin = async () => {
+    clearAccountDeletionNotice();
     setErrorBanner(null);
     setNoticeBanner(null);
     setUnconfirmedEmail(null);
@@ -184,6 +187,20 @@ export default function LoginScreen() {
           title={t('auth.login.alert.notice_title')}
           message={noticeBanner}
           testID="login-notice-banner"
+        />
+      ) : null}
+
+      {/* Shown after an account deletion ended this device's session */}
+      {deletionNotice ? (
+        <Banner
+          tone="notice"
+          title={t('auth.login.alert.notice_title')}
+          message={
+            deletionNotice === 'deleted'
+              ? t('settings.delete.notice.deleted')
+              : t('settings.delete.notice.pending')
+          }
+          testID="login-account-deletion-banner"
         />
       ) : null}
 

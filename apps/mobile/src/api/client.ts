@@ -10,6 +10,7 @@ import type {
 import { env } from '../config/env';
 import { getSupabaseClient } from '../auth/supabase';
 import { getSessionEpoch, getCurrentAuthUserId, enqueueAuthOp } from '../auth/authScope';
+import { setAccountDeletionNotice, type AccountDeletionNotice } from '../auth/accountDeletionNotice';
 
 export class ApiError extends Error {
   status: number;
@@ -38,8 +39,14 @@ let handlingExpiredSession = false;
  * Recovers from an invalid/expired session on 401 by clearing the bad Supabase session locally.
  * Owner and epoch are frozen before any await and re-checked after every async boundary
  * (including inside the shared auth queue), so a late 401 can never sign out a newer session.
+ * An optional `notice` is published for the login screen only when this call is the one that
+ * actually performs the (still-current) local sign-out.
  */
-export async function handleExpiredSession(expectedOwnerId?: string, expectedEpoch?: number): Promise<void> {
+export async function handleExpiredSession(
+  expectedOwnerId?: string,
+  expectedEpoch?: number,
+  options?: { notice?: AccountDeletionNotice }
+): Promise<void> {
   if (handlingExpiredSession) return;
   handlingExpiredSession = true;
 
@@ -83,6 +90,7 @@ export async function handleExpiredSession(expectedOwnerId?: string, expectedEpo
     await enqueueAuthOp(async () => {
       // The queue may have delayed us behind a sign-in/out: re-check before the destructive call
       if (!stillCurrent()) return;
+      if (options?.notice) setAccountDeletionNotice(options.notice);
       await client.auth.signOut({ scope: 'local' });
     });
   } catch {
@@ -141,7 +149,16 @@ export interface ApiRequestOptions extends Omit<RequestInit, 'body'> {
   body?: unknown;
   expectedOwnerId?: string;
   expectedEpoch?: number;
+  /**
+   * Called synchronously right before the HTTP request is dispatched. Everything that throws
+   * before this point (no session, identity/epoch mismatch) provably never reached the server;
+   * callers that must not guess whether a write happened (account deletion) rely on it.
+   */
+  onBeforeSend?: () => void;
 }
+
+/** The backend's 403 for any regular route once an account has a deletion record. */
+const PENDING_DELETION_MESSAGE = /^account is pending deletion/i;
 
 export async function apiRequest<T>(
   path: string,
@@ -160,7 +177,7 @@ export async function apiRequest<T>(
   const initiatingOwnerId = init?.expectedOwnerId ?? (currentScope ?? undefined);
 
   // Destructure expectedOwnerId and expectedEpoch OUT so they never leak as fetch options
-  const { expectedOwnerId, expectedEpoch, ...fetchInit } = init || {};
+  const { expectedOwnerId, expectedEpoch, onBeforeSend, ...fetchInit } = init || {};
 
   // 2. Fetch session from Supabase SDK, failing closed on SDK error / missing session / missing token
   const client = getSupabaseClient();
@@ -260,6 +277,7 @@ export async function apiRequest<T>(
     body = JSON.stringify(fetchInit.body);
   }
 
+  onBeforeSend?.();
   const response = await fetch(url, {
     ...fetchInit,
     headers,
@@ -291,6 +309,11 @@ export async function apiRequest<T>(
       await handleExpiredSession(effectiveOwner, initiatingEpoch);
     }
     const { message, code } = parseServerErrorMessage(responseBody, response.status);
+    if (response.status === 403 && !isStale && PENDING_DELETION_MESSAGE.test(message)) {
+      // The account is mid-deletion (e.g. the app was reopened): leave locally instead of
+      // rendering broken screens. Fenced by the same owner/epoch as the request.
+      await handleExpiredSession(effectiveOwner, initiatingEpoch, { notice: 'pending' });
+    }
     throw new ApiError(response.status, message, code, responseBody);
   }
 

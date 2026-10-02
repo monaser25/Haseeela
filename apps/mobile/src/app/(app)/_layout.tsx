@@ -153,6 +153,10 @@ export default function AppLayout() {
           name="notifications"
           options={{ presentation: 'card' }}
         />
+        <Stack.Screen
+          name="delete-account"
+          options={{ presentation: 'card', gestureEnabled: false }}
+        />
       </Stack>
     </>
   );

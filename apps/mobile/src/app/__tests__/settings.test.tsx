@@ -119,6 +119,21 @@ describe('SettingsScreen', () => {
     });
   });
 
+  it('offers account deletion in a separate danger zone that opens the confirmation screen', async () => {
+    const { getByTestId, getByText } = setupProviders();
+
+    await waitFor(() => {
+      expect(getByTestId('settings-danger-header')).toBeTruthy();
+    });
+    expect(getByText('Danger zone')).toBeTruthy();
+    expect(getByText('Delete my account')).toBeTruthy();
+
+    // Nothing is deleted from Settings itself; it only navigates to the confirmation step
+    fireEvent.press(getByTestId('settings-delete-account-link'));
+    expect(mockPush).toHaveBeenCalledWith('/(app)/delete-account');
+    expect(mockServer.getWriteRequests()).toHaveLength(0);
+  });
+
   it('renders grouped sections with email, profile, currency, and accounting mode', async () => {
     const { getByTestId } = setupProviders();
 

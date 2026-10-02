@@ -26,6 +26,7 @@ import {
   ChevronRight,
   AlertCircle,
   Check,
+  Trash2,
 } from 'lucide-react-native';
 import { supportedCurrencies, type CurrencyCode } from '@haseela/shared';
 import { useTheme, type ColorSchemePreference } from '../../theme';
@@ -763,6 +764,62 @@ export default function SettingsScreen() {
               thumbColor="#FFFFFF"
             />
           </View>
+        </View>
+
+        {/* 5. Danger zone */}
+        <Text
+          testID="settings-danger-header"
+          style={[styles.sectionHeader, { color: theme.colors.negativeText }]}
+        >
+          {t('settings.section.danger')}
+        </Text>
+        <View
+          style={[
+            styles.listCard,
+            {
+              backgroundColor: theme.colors.surface,
+              borderColor: theme.colors.negative,
+              borderRadius: theme.radius.lg,
+            },
+          ]}
+        >
+          <Pressable
+            testID="settings-delete-account-link"
+            accessibilityRole="button"
+            accessibilityLabel={t('profile.action.deleteAccount')}
+            onPress={() => router.push('/(app)/delete-account' as never)}
+            disabled={isSigningOut}
+            style={({ pressed }) => [
+              styles.listRow,
+              {
+                borderBottomWidth: 0,
+                backgroundColor: pressed ? theme.colors.surfaceHover : 'transparent',
+                opacity: isSigningOut ? 0.6 : 1,
+              },
+            ]}
+          >
+            <View style={[styles.iconWrap, { backgroundColor: theme.colors.negativeTint }]}>
+              <Trash2 size={18} color={theme.colors.negativeText} />
+            </View>
+            <View style={styles.rowBody}>
+              <Text style={[theme.typography.bodySemiBold, { color: theme.colors.negativeText }]}>
+                {t('profile.action.deleteAccount')}
+              </Text>
+              <Text
+                style={[
+                  theme.typography.caption,
+                  { color: theme.colors.textSecondary, marginTop: 2 },
+                ]}
+              >
+                {t('profile.section.deleteSub')}
+              </Text>
+            </View>
+            <ChevronRight
+              size={18}
+              color={theme.colors.textMuted}
+              style={I18nManager.isRTL ? { transform: [{ scaleX: -1 }] } : undefined}
+            />
+          </Pressable>
         </View>
       </ScrollView>
 
