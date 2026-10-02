@@ -131,6 +131,7 @@ describe('NewTransactionScreen and TransactionDetailScreen', () => {
           data: {
             session: {
               access_token: 'mock-test-access-token',
+              user: { id: 'user-123' },
             },
           },
           error: null,

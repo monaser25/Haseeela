@@ -31,6 +31,7 @@ describe('API client: apiRequest', () => {
       data: {
         session: {
           access_token: 'valid-test-access-token',
+          user: { id: 'test-user-id' },
         },
       },
       error: null,

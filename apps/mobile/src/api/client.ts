@@ -9,7 +9,7 @@ import type {
 } from '@haseela/shared';
 import { env } from '../config/env';
 import { getSupabaseClient } from '../auth/supabase';
-import { getSessionEpoch, getCurrentAuthUserId } from '../auth/authScope';
+import { getSessionEpoch, getCurrentAuthUserId, enqueueAuthOp } from '../auth/authScope';
 
 export class ApiError extends Error {
   status: number;
@@ -35,39 +35,56 @@ export interface FinancialSnapshot {
 let handlingExpiredSession = false;
 
 /**
- * Recovers from an invalid/expired session on 401:
- * Clears the bad Supabase session token locally so the app is not stuck in an unusable state.
- * Protected against late 401 signing out another user who already signed in.
+ * Recovers from an invalid/expired session on 401 by clearing the bad Supabase session locally.
+ * Owner and epoch are frozen before any await and re-checked after every async boundary
+ * (including inside the shared auth queue), so a late 401 can never sign out a newer session.
  */
 export async function handleExpiredSession(expectedOwnerId?: string, expectedEpoch?: number): Promise<void> {
   if (handlingExpiredSession) return;
-
-  const currentScope = getCurrentAuthUserId();
-  if (expectedOwnerId !== undefined) {
-    if (currentScope !== undefined && currentScope !== expectedOwnerId) {
-      return;
-    }
-    // Also verify actual SDK session
-    try {
-      const client = getSupabaseClient();
-      const { data } = await client.auth.getSession();
-      const currentSdkUser = data?.session?.user?.id;
-      if (currentSdkUser && currentSdkUser !== expectedOwnerId) {
-        return;
-      }
-    } catch {
-      return;
-    }
-  }
-  if (expectedEpoch !== undefined && expectedEpoch !== getSessionEpoch()) {
-    return;
-  }
-
   handlingExpiredSession = true;
 
   try {
+    const scopeAtStart = getCurrentAuthUserId();
+    const frozenOwner = expectedOwnerId ?? (typeof scopeAtStart === 'string' ? scopeAtStart : undefined);
+    const frozenEpoch = expectedEpoch ?? getSessionEpoch();
+
+    const stillCurrent = (): boolean => {
+      if (frozenEpoch !== getSessionEpoch()) return false;
+      const scope = getCurrentAuthUserId();
+      if (scope === null) return false;
+      if (frozenOwner !== undefined && scope !== undefined && scope !== frozenOwner) return false;
+      return true;
+    };
+
+    if (!stillCurrent()) return;
+
     const client = getSupabaseClient();
-    await client.auth.signOut({ scope: 'local' });
+
+    if (frozenOwner !== undefined) {
+      let sdkUserId: string | undefined;
+      let sdkFailed = false;
+      try {
+        const { data, error } = await client.auth.getSession();
+        if (error) {
+          sdkFailed = true;
+        } else {
+          sdkUserId = data?.session?.user?.id;
+          // No session / no user: nothing left to sign out
+          if (!sdkUserId) return;
+        }
+      } catch {
+        sdkFailed = true;
+      }
+      // On an SDK error the user cannot be verified; the 401 plus the frozen scope/epoch decide.
+      if (!sdkFailed && sdkUserId !== frozenOwner) return;
+      if (!stillCurrent()) return;
+    }
+
+    await enqueueAuthOp(async () => {
+      // The queue may have delayed us behind a sign-in/out: re-check before the destructive call
+      if (!stillCurrent()) return;
+      await client.auth.signOut({ scope: 'local' });
+    });
   } catch {
     // Best effort — local signOut should not throw
   } finally {
@@ -165,20 +182,12 @@ export async function apiRequest<T>(
     throw new Error('Unauthenticated');
   }
 
+  // Fail closed: the authoritative SDK user id is required, never a placeholder identity
   const rawOwnerId = sessionData.session?.user?.id;
-  if (rawOwnerId !== undefined && (typeof rawOwnerId !== 'string' || !rawOwnerId.trim())) {
+  if (typeof rawOwnerId !== 'string' || !rawOwnerId.trim()) {
     throw new Error('Unauthenticated');
   }
-
-  const sessionOwnerId =
-    rawOwnerId && rawOwnerId.trim()
-      ? rawOwnerId.trim()
-      : token
-      ? (initiatingOwnerId ?? 'sdk-unit-user')
-      : undefined;
-  if (!sessionOwnerId) {
-    throw new Error('Unauthenticated');
-  }
+  const sessionOwnerId = rawOwnerId.trim();
 
   // A transition from uninitialized to a published owner while getSession waits must not retarget old input
   if (preAwaitScope === undefined && getCurrentAuthUserId() !== undefined) {

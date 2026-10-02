@@ -56,6 +56,7 @@ describe('TransactionsScreen Tab', () => {
           data: {
             session: {
               access_token: 'mock-test-access-token',
+              user: { id: 'test-user-id' },
             },
           },
           error: null,
