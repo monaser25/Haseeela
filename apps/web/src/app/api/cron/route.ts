@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/server/prisma';
 import { withApiError } from '@/server/errors';
 import { generateNotifications } from '@/server/notifications';
-import { runDueRecurringPaymentsInTransaction } from '@/server/recurring-billing';
+import { RECURRING_TRANSACTION_OPTIONS, runDueRecurringPaymentsInTransaction } from '@/server/recurring-billing';
 import { retryPendingDeletions } from '@/server/accountDeletion';
 
 export const runtime = 'nodejs';
@@ -51,7 +51,7 @@ export const GET = async (request: Request) => withApiError(request, async () =>
     try {
       await prisma.$transaction(async (tx) => {
         await runDueRecurringPaymentsInTransaction(tx, userId, now);
-      });
+      }, RECURRING_TRANSACTION_OPTIONS);
       await generateNotifications(userId, { sendPush: true });
       processed += 1;
     } catch (err) {
