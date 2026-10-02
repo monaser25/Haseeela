@@ -145,27 +145,22 @@ export function FloatingTabBar({ state, descriptors, navigation, position }: Flo
     routeWArray.value = ws;
   }, [state.routes.length, getSlotLayout, routeXArray, routeWArray]);
 
-  // Keep posShared in sync when state.index changes without continuous position (e.g. tests)
+  // Without a pager position (plain tabs, tests) the pill springs to the focused index.
   useEffect(() => {
-    if (reduceMotion) {
-      posShared.value = state.index;
-    } else if (!position) {
-      posShared.value = withSpring(state.index, theme.motion.spring.snappy);
-    }
-  }, [state.index, reduceMotion, position, posShared, theme.motion.spring.snappy]);
+    posShared.value = reduceMotion ? state.index : withSpring(state.index, theme.motion.spring.snappy);
+  }, [state.index, reduceMotion, posShared, theme.motion.spring.snappy]);
 
-  // Bridge core Animated position from MaterialTopTabs pager to Reanimated shared value
-  useEffect(() => {
-    if (!position || typeof position.addListener !== 'function') return;
-    const listenerId = position.addListener(({ value }: { value: number }) => {
-      posShared.value = value;
-    });
-    return () => {
-      if (typeof position.removeListener === 'function') {
-        position.removeListener(listenerId);
-      }
-    };
-  }, [position, posShared]);
+  // The pager drives `position` on the native driver, so JS listeners never fire while swiping.
+  // Interpolating it in an RN Animated style keeps the pill on the finger, on the UI thread.
+  const routeXs = state.routes.map((_, r) => getSlotLayout(slotFor(r)).x);
+  const pagerTranslateX =
+    position && routeXs.length > 1
+      ? position.interpolate({
+          inputRange: routeXs.map((_, r) => r),
+          outputRange: routeXs,
+          extrapolate: 'clamp',
+        })
+      : null;
 
   const pillStyle = useAnimatedStyle(() => {
     const p = posShared.value;
@@ -246,7 +241,21 @@ export function FloatingTabBar({ state, descriptors, navigation, position }: Flo
           theme.shadows.md,
         ]}
       >
-        {barWidth > 0 || effectivePillWidth > 0 ? (
+        {(barWidth > 0 || effectivePillWidth > 0) && pagerTranslateX ? (
+          <RNAnimated.View
+            pointerEvents="none"
+            testID="floating-tab-bar-pill"
+            style={[
+              styles.pill,
+              {
+                width: effectivePillWidth,
+                backgroundColor: theme.colors.accentTint,
+                borderRadius: theme.radius.xl,
+                transform: [{ translateX: pagerTranslateX }],
+              },
+            ]}
+          />
+        ) : barWidth > 0 || effectivePillWidth > 0 ? (
           <Animated.View
             pointerEvents="none"
             testID="floating-tab-bar-pill"
