@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import * as SplashScreen from 'expo-splash-screen';
 import { Locale } from '@haseela/shared';
 import { ThemeProvider, useTheme } from '../theme';
@@ -63,19 +64,21 @@ export default function RootLayout() {
   }, []);
 
   return (
-    <SafeAreaProvider>
-      <ThemeProvider>
-        <I18nProvider initialLocale={initialLocale ?? undefined}>
-          <QueryProvider>
-            <AuthProvider>
-              <ForceUpdateGate>
-                <PushNavigationHandler />
-                <RootContent isLocaleReady={initialLocale !== null} />
-              </ForceUpdateGate>
-            </AuthProvider>
-          </QueryProvider>
-        </I18nProvider>
-      </ThemeProvider>
-    </SafeAreaProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaProvider>
+        <ThemeProvider>
+          <I18nProvider initialLocale={initialLocale ?? undefined}>
+            <QueryProvider>
+              <AuthProvider>
+                <ForceUpdateGate>
+                  <PushNavigationHandler />
+                  <RootContent isLocaleReady={initialLocale !== null} />
+                </ForceUpdateGate>
+              </AuthProvider>
+            </QueryProvider>
+          </I18nProvider>
+        </ThemeProvider>
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }

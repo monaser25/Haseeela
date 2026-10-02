@@ -7,12 +7,13 @@ import { useTheme } from '../../theme';
 import { useI18n } from '../../i18n';
 import { parseCalendarDate } from '../../utils/calendarDate';
 import { Chevron, IconTile } from '../ui';
-import { PressableScale } from '../motion';
+import { PressableScale, SwipeableRow } from '../motion';
 
 export interface SubscriptionRowProps {
   subscription: Subscription;
   currency: CurrencyCode;
   onPress: (item: Subscription) => void;
+  onArchive?: (item: Subscription) => void;
   testID?: string;
 }
 
@@ -20,6 +21,7 @@ function SubscriptionRowBase({
   subscription,
   currency,
   onPress,
+  onArchive,
   testID,
 }: SubscriptionRowProps) {
   const { theme } = useTheme();
@@ -73,7 +75,7 @@ function SubscriptionRowBase({
       : ''
   }${isDueSoon ? `, ${t('subscriptions.burden.dueSoon')}` : ''}`;
 
-  return (
+  const rowContent = (
     <PressableScale
       testID={testID ?? `subscription-row-${subscription.id}`}
       accessibilityRole="button"
@@ -211,11 +213,38 @@ function SubscriptionRowBase({
       <Chevron size={18} color={theme.colors.textMuted} />
     </PressableScale>
   );
+
+  return (
+    <SwipeableRow
+      enabled={Boolean(onArchive && !isArchived)}
+      action={
+        onArchive
+          ? {
+              type: 'archive',
+              label: t('subscriptions.actions.archive'),
+              isDestructive: false,
+              confirmTitle: t('subscriptions.archive.title', { name: subscription.name }),
+              confirmMessage: t('subscriptions.archive.disclaimer'),
+              confirmText: t('subscriptions.archive.confirm'),
+              cancelText: t('subscriptions.delete.cancel'),
+              onPress: () => onArchive(subscription),
+              testID: `subscription-archive-${subscription.id}`,
+            }
+          : undefined
+      }
+      style={styles.swipeWrapper}
+    >
+      {rowContent}
+    </SwipeableRow>
+  );
 }
 
 export const SubscriptionRow = React.memo(SubscriptionRowBase);
 
 const styles = StyleSheet.create({
+  swipeWrapper: {
+    marginBottom: 10,
+  },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -223,7 +252,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 14,
     borderWidth: StyleSheet.hairlineWidth,
-    marginBottom: 10,
     minHeight: 72,
   },
   content: {

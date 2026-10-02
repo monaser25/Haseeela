@@ -5,13 +5,14 @@ import { useTheme } from '../../theme';
 import { useI18n } from '../../i18n';
 import { parseCalendarDate } from '../../utils/calendarDate';
 import { Avatar, Chevron } from '../ui';
-import { PressableScale } from '../motion';
+import { PressableScale, SwipeableRow } from '../motion';
 
 export interface ClientRowProps {
   client: Client;
   currency: string;
   totalPaid: number;
   onPress: (item: Client) => void;
+  onArchive?: (item: Client) => void;
   testID?: string;
 }
 
@@ -20,6 +21,7 @@ function ClientRowBase({
   currency,
   totalPaid,
   onPress,
+  onArchive,
   testID,
 }: ClientRowProps) {
   const { theme } = useTheme();
@@ -77,7 +79,7 @@ function ClientRowBase({
     isRetainer ? t('clients.badges.retainer') : t('clients.badges.onetime')
   }, ${scheduleText}, ${t('clients.payment.totalPaid')}: ${formatCurrency(totalPaid, currency)}`;
 
-  return (
+  const rowContent = (
     <PressableScale
       testID={testID ?? `client-row-${client.id}`}
       accessibilityRole="button"
@@ -171,17 +173,43 @@ function ClientRowBase({
       <Chevron size={18} color={theme.colors.textMuted} />
     </PressableScale>
   );
+
+  return (
+    <SwipeableRow
+      enabled={Boolean(onArchive && !isArchived)}
+      action={
+        onArchive
+          ? {
+              type: 'archive',
+              label: t('clients.actions.archive'),
+              isDestructive: false,
+              confirmTitle: t('clients.delete.title', { name: client.name }),
+              confirmMessage: t('clients.delete.desc'),
+              confirmText: t('clients.actions.archive'),
+              cancelText: t('clients.delete.cancel'),
+              onPress: () => onArchive(client),
+              testID: `client-archive-${client.id}`,
+            }
+          : undefined
+      }
+      style={styles.swipeWrapper}
+    >
+      {rowContent}
+    </SwipeableRow>
+  );
 }
 
 export const ClientRow = React.memo(ClientRowBase);
 
 const styles = StyleSheet.create({
+  swipeWrapper: {
+    marginHorizontal: 16,
+    marginBottom: 10,
+  },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
     minHeight: 76, // Exceeds 44pt touch target
-    marginHorizontal: 16,
-    marginBottom: 10,
     paddingHorizontal: 14,
     paddingVertical: 14,
     borderWidth: StyleSheet.hairlineWidth,

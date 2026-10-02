@@ -7,16 +7,19 @@ import { useTheme } from '../../theme';
 import { useI18n } from '../../i18n';
 import { parseCalendarDate } from '../../utils/calendarDate';
 import { InvoiceStatusBadge } from './InvoiceStatusBadge';
+import { SwipeableRow } from '../motion';
 
 export interface InvoiceRowProps {
   invoice: Invoice;
   onPress: (item: Invoice) => void;
+  onDelete?: (item: Invoice) => void;
   testID?: string;
 }
 
 function InvoiceRowBase({
   invoice,
   onPress,
+  onDelete,
   testID,
 }: InvoiceRowProps) {
   const { theme } = useTheme();
@@ -54,7 +57,7 @@ function InvoiceRowBase({
 
   const accessibilityLabel = `${primaryTitle}, ${formattedAmount}, ${status}${dateSub ? `, ${dateSub}` : ''}`;
 
-  return (
+  const rowContent = (
     <Pressable
       testID={testID ?? `invoice-row-${invoice.id}`}
       accessibilityRole="button"
@@ -107,6 +110,29 @@ function InvoiceRowBase({
 
       <ChevronRight size={18} color={theme.colors.textMuted} style={styles.chevron} />
     </Pressable>
+  );
+
+  return (
+    <SwipeableRow
+      enabled={Boolean(onDelete)}
+      action={
+        onDelete
+          ? {
+              type: 'delete',
+              label: t('invoices.actions.delete'),
+              isDestructive: true,
+              confirmTitle: t('invoices.deleteDialog.title'),
+              confirmMessage: t('invoices.deleteDialog.description', { number: invoice.number }),
+              confirmText: t('invoices.deleteDialog.confirm'),
+              cancelText: t('invoices.send.cancel'),
+              onPress: () => onDelete(invoice),
+              testID: `invoice-delete-${invoice.id}`,
+            }
+          : undefined
+      }
+    >
+      {rowContent}
+    </SwipeableRow>
   );
 }
 
