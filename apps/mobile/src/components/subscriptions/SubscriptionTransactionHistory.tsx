@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import type { Transaction, CurrencyCode } from '@haseela/shared';
-import { formatTransactionName } from '@haseela/shared';
+import { formatTransactionName, prefixCurrencySign } from '@haseela/shared';
 import { Receipt } from 'lucide-react-native';
 import { useTheme } from '../../theme';
 import { useI18n } from '../../i18n';
@@ -128,8 +128,7 @@ export function SubscriptionTransactionHistory({
                       },
                     ]}
                   >
-                    {tx.type === 'EXPENSE' ? '-' : '+'}
-                    {formatCurrency(tx.amount, currency)}
+                    {prefixCurrencySign(tx.type === 'EXPENSE' ? '-' : '+', formatCurrency(tx.amount, currency))}
                   </Text>
                 </View>
               </View>

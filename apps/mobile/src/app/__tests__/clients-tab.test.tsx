@@ -315,7 +315,7 @@ describe('ClientsScreen Tab', () => {
     expect(revenueCard).toBeTruthy();
 
     // Check $5,600 is rendered
-    expect(await findByText('$5,600.00')).toBeTruthy();
+    expect(await findByText('⁦5,600.00 $⁩')).toBeTruthy();
 
     // Check Helia Botanicals is shown in the revenue card
     expect(getAllByText(/Helia Botanicals/).length).toBeGreaterThanOrEqual(1);

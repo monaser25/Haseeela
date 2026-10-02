@@ -609,7 +609,7 @@ describe('Client Detail & New Client Screens', () => {
       // 1. Initial dialog open: count resolves successfully with cached 1
       fireEvent.press(getByTestId('client-delete-permanent-btn'));
       expect(await findByTestId('delete-count-ready')).toBeTruthy();
-      expect(await findByText(/1 historical transaction totaling \$800\.00 will be removed/)).toBeTruthy();
+      expect(await findByText(/1 historical transaction totaling \u2066800\.00 \$\u2069 will be removed/)).toBeTruthy();
       expect(getByTestId('permanent-delete-confirm').props.accessibilityState?.disabled).toBe(false);
 
       // Close modal
@@ -686,7 +686,7 @@ describe('Client Detail & New Client Screens', () => {
       fireEvent.press(getByTestId('delete-count-retry-btn'));
 
       expect(await findByTestId('delete-count-ready')).toBeTruthy();
-      expect(await findByText(/3 historical transactions totaling \$800\.00 will be removed/)).toBeTruthy();
+      expect(await findByText(/3 historical transactions totaling \u2066800\.00 \$\u2069 will be removed/)).toBeTruthy();
 
       // Delete confirm is now enabled and deletes successfully
       expect(getByTestId('permanent-delete-confirm').props.accessibilityState?.disabled).toBe(false);

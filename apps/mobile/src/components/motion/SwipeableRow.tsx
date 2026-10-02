@@ -305,6 +305,8 @@ export function SwipeableRow({
         overshootFriction={reduceMotion ? 8 : 4}
         overshootLeft={isRTL && enableFullSwipe}
         overshootRight={!isRTL && enableFullSwipe}
+        dragOffsetFromLeftEdge={10}
+        dragOffsetFromRightEdge={10}
         leftThreshold={THRESHOLD}
         rightThreshold={THRESHOLD}
         renderLeftActions={isRTL ? renderActions : undefined}

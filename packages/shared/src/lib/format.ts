@@ -27,9 +27,43 @@ export function createCurrencyFormatter(currency: string, locale: Locale, option
   return createNumberFormatter(locale, {
     style: 'currency',
     currency,
-    currencyDisplay: locale === 'ar' ? 'name' : 'symbol',
+    currencyDisplay: 'narrowSymbol',
     ...options,
   });
+}
+
+// Amounts read number-then-symbol in both languages ("1,200.00 $"), like most finance apps here.
+// Digits and symbols are direction-neutral, so the amount is wrapped in an LTR isolate to keep
+// that order inside Arabic (RTL) paragraphs too.
+const LRI = '⁦';
+const PDI = '⁩';
+
+export function currencySymbol(currency: string) {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency,
+    currencyDisplay: 'narrowSymbol',
+  }).formatToParts(0).find((part) => part.type === 'currency')?.value || currency;
+}
+
+/** Number then symbol, Latin digits, same in Arabic and English: "1,200.00 $", "-45.50 $". */
+export function formatCurrency(amount: number, currency: string, _locale: Locale, options?: NumberFormatOptions) {
+  const parts = new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency,
+    currencyDisplay: 'narrowSymbol',
+    ...options,
+  }).formatToParts(amount);
+  const number = parts
+    .filter((part) => part.type !== 'currency' && part.type !== 'literal')
+    .map((part) => part.value)
+    .join('');
+  return `${LRI}${number} ${currencySymbol(currency)}${PDI}`;
+}
+
+/** Puts a +/- in front of a formatted amount, inside its isolate so it stays in front in RTL. */
+export function prefixCurrencySign(sign: string, formatted: string) {
+  return formatted.startsWith(LRI) ? `${LRI}${sign}${formatted.slice(LRI.length)}` : `${sign}${formatted}`;
 }
 
 function formatArabicDate(date: Date, options?: DateFormatOptions) {
@@ -52,10 +86,6 @@ export function formatDate(date: DateValue, locale: Locale, options?: DateFormat
   const value = toDate(date);
   if (locale === 'ar') return formatArabicDate(value, options);
   return createDateFormatter(locale, options).format(value);
-}
-
-export function formatCurrency(amount: number, currency: string, locale: Locale, options?: NumberFormatOptions) {
-  return createCurrencyFormatter(currency, locale, options).format(amount);
 }
 
 export function formatNumber(value: number, locale: Locale, options?: NumberFormatOptions) {

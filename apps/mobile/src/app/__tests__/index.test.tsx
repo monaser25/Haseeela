@@ -162,20 +162,20 @@ describe('HomeScreen Dashboard States', () => {
 
     // Net profit = 5000 - 200 = 4800
     const netCard = getByTestId('stat-card-net-profit');
-    expect(netCard.props.accessibilityLabel).toBe('Net profit, $4,800.00');
+    expect(netCard.props.accessibilityLabel).toBe('Net profit, ⁦4,800.00 $⁩');
     expect(getByTestId('stat-value-net-profit').props.children).toContain('4,800');
 
     // Revenue = 5000
     const revCard = getByTestId('stat-card-revenue');
-    expect(revCard.props.accessibilityLabel).toBe('Total revenue, $5,000.00');
+    expect(revCard.props.accessibilityLabel).toBe('Total revenue, ⁦5,000.00 $⁩');
 
     // Expenses = 200
     const expCard = getByTestId('stat-card-expenses');
-    expect(expCard.props.accessibilityLabel).toBe('Total expenses, $200.00');
+    expect(expCard.props.accessibilityLabel).toBe('Total expenses, ⁦200.00 $⁩');
 
     // Pending = 1200
     const pendingCard = getByTestId('stat-card-pending');
-    expect(pendingCard.props.accessibilityLabel).toBe('Pending payments, $1,200.00');
+    expect(pendingCard.props.accessibilityLabel).toBe('Pending payments, ⁦1,200.00 $⁩');
 
     // Upcoming subscriptions card rendered
     expect(getByTestId('active-subscriptions-card')).toBeTruthy();

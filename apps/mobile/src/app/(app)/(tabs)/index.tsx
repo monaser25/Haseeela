@@ -17,6 +17,7 @@ import {
   getRecentTransactions,
   categoryLabel,
   computeNextBillingDate,
+  prefixCurrencySign,
 } from '@haseela/shared';
 import { useTheme } from '../../../theme';
 import { useI18n } from '../../../i18n';
@@ -576,8 +577,7 @@ export default function HomeScreen() {
                               { color: amountTone },
                             ]}
                           >
-                            {sign}
-                            {formatCurrency(tx.amount, currency)}
+                            {prefixCurrencySign(sign, formatCurrency(tx.amount, currency))}
                           </Text>
                         </View>
                       );

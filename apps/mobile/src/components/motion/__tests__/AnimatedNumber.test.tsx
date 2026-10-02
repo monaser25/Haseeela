@@ -14,8 +14,8 @@ describe('buildCountFrames', () => {
     const frames = buildCountFrames(0, 4800, formatUsd);
 
     expect(frames).toHaveLength(COUNT_STEPS + 1);
-    expect(frames[0]).toBe('$0.00');
-    expect(frames[COUNT_STEPS]).toBe('$4,800.00');
+    expect(frames[0]).toBe('⁦0.00 $⁩');
+    expect(frames[COUNT_STEPS]).toBe('⁦4,800.00 $⁩');
   });
 
   it('counts monotonically up and down', () => {
@@ -28,12 +28,13 @@ describe('buildCountFrames', () => {
     expect([...down].sort((a, b) => b - a)).toEqual(down);
   });
 
-  it('uses the locale formatter, so Arabic frames are Arabic', () => {
+  it('uses the locale formatter, so frames match the number-then-symbol amount layout', () => {
     const frames = buildCountFrames(0, 1500, formatEgpAr);
 
     expect(frames[COUNT_STEPS]).toBe(formatEgpAr(1500));
-    expect(frames[COUNT_STEPS]).toContain('جنيه');
-    expect(frames[0]).toContain('جنيه');
+    // Arabic amounts are an LTR isolate: number then symbol.
+    expect(frames[COUNT_STEPS]).toBe('⁦1,500.00 E£⁩');
+    expect(frames[0]).toBe('⁦0.00 E£⁩');
   });
 });
 
@@ -49,7 +50,7 @@ describe('AnimatedNumber', () => {
       <AnimatedNumber value={4800} format={formatUsd} testID="amount" />
     );
 
-    expect(getByTestId('amount').props.children).toBe('$4,800.00');
+    expect(getByTestId('amount').props.children).toBe('⁦4,800.00 $⁩');
   });
 
   it('lands on the formatted target when motion is allowed', () => {
@@ -59,7 +60,7 @@ describe('AnimatedNumber', () => {
       <AnimatedNumber value={4800} format={formatUsd} testID="amount" />
     );
 
-    expect(getByTestId('amount').props.children).toBe('$4,800.00');
+    expect(getByTestId('amount').props.children).toBe('⁦4,800.00 $⁩');
   });
 
   it('re-targets when the value changes', () => {
@@ -70,7 +71,7 @@ describe('AnimatedNumber', () => {
     );
     rerender(<AnimatedNumber value={250} format={formatUsd} testID="amount" />);
 
-    expect(getByTestId('amount').props.children).toBe('$250.00');
+    expect(getByTestId('amount').props.children).toBe('⁦250.00 $⁩');
   });
 
   it('exposes the final value to screen readers and lets callers override the label', () => {
@@ -79,7 +80,7 @@ describe('AnimatedNumber', () => {
     const { getByTestId, rerender } = render(
       <AnimatedNumber value={4800} format={formatUsd} testID="amount" />
     );
-    expect(getByTestId('amount').props.accessibilityLabel).toBe('$4,800.00');
+    expect(getByTestId('amount').props.accessibilityLabel).toBe('⁦4,800.00 $⁩');
 
     rerender(
       <AnimatedNumber

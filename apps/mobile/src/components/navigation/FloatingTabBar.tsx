@@ -1,9 +1,10 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, I18nManager, StyleSheet, LayoutChangeEvent } from 'react-native';
+import { View, Text, StyleSheet, LayoutChangeEvent, Animated as RNAnimated } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import { Home, Receipt, Users, Menu } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../../theme';
+import { useIsRTL } from '../../i18n';
 import { PressableScale, useReduceMotion } from '../motion';
 import {
   TAB_BAR_HEIGHT,
@@ -13,7 +14,6 @@ import {
   slotFor,
   calculateSlotLayout,
 } from './tabBarMetrics';
-import { useTabSwipe } from './TabSwipeContext';
 
 type TabIcon = React.ComponentType<{ size?: number; color?: string; strokeWidth?: number }>;
 
@@ -30,12 +30,12 @@ interface TabRoute {
   params?: object;
 }
 
-/** Subset of react-navigation's BottomTabBarProps that the bar actually uses. */
+/** Subset of material-top-tabs and react-navigation TabBarProps that the bar actually uses. */
 export interface FloatingTabBarProps {
   state: { index: number; routes: TabRoute[] };
   descriptors: Record<
     string,
-    { options: { title?: string; tabBarAccessibilityLabel?: string } }
+    { options: { title?: string; tabBarAccessibilityLabel?: string; [key: string]: unknown } }
   >;
   navigation: {
     emit: (event: { type: 'tabPress'; target: string; canPreventDefault: true }) => {
@@ -43,6 +43,9 @@ export interface FloatingTabBarProps {
     };
     navigate: (name: string, params?: object) => void;
   };
+  position?: RNAnimated.AnimatedInterpolation<number>;
+  layout?: { width: number; height: number };
+  jumpTo?: (key: string) => void;
 }
 
 interface TabItemProps {
@@ -97,11 +100,11 @@ function TabItem({ name, label, accessibilityLabel, focused, onPress }: TabItemP
  * Floating pill tab bar. It sits in the layout flow (not absolutely positioned) so screen content
  * never hides behind it. An accent pill springs between the measured item layouts; slot 2 is left open for the FAB.
  */
-export function FloatingTabBar({ state, descriptors, navigation }: FloatingTabBarProps) {
+export function FloatingTabBar({ state, descriptors, navigation, position }: FloatingTabBarProps) {
   const { theme } = useTheme();
   const insets = useSafeAreaInsets();
   const reduceMotion = useReduceMotion();
-  const tabSwipe = useTabSwipe();
+  const isRTL = useIsRTL();
   const [barWidth, setBarWidth] = useState(0);
   const [itemLayouts, setItemLayouts] = useState<Record<number, { x: number; width: number }>>({});
 
@@ -114,65 +117,99 @@ export function FloatingTabBar({ state, descriptors, navigation }: FloatingTabBa
       if (itemLayouts[slot]) {
         return itemLayouts[slot];
       }
-      return calculateSlotLayout(slot, barWidth, slotCount, I18nManager.isRTL);
+      return calculateSlotLayout(slot, barWidth, slotCount, isRTL);
     },
-    [itemLayouts, barWidth, slotCount]
+    [itemLayouts, barWidth, slotCount, isRTL]
   );
 
   const activeLayout = getSlotLayout(activeSlot);
+  const slotWidth = activeLayout.width > 0 ? activeLayout.width : barWidth > 0 ? barWidth / slotCount : 0;
+  // A fixed-size capsule centered in its slot, inset from the bar's rounded ends.
+  const pillWidth = Math.max(0, Math.min(slotWidth - PILL_INSET * 2, PILL_MAX_WIDTH));
+  const pillXFor = useCallback(
+    (slot: number) => {
+      const l = getSlotLayout(slot);
+      return l.x + (l.width - pillWidth) / 2;
+    },
+    [getSlotLayout, pillWidth]
+  );
 
-  // Shared values tracking the pill position and width
-  const pillX = useSharedValue(activeLayout.x);
-  const pillWidth = useSharedValue(activeLayout.width);
+  // Shared value tracking continuous position (0..routes.length - 1)
+  const posShared = useSharedValue(state.index);
 
-  // Arrays of slot coordinates exposed to Reanimated worklets for continuous swipe tracking
-  const slotXArray = useSharedValue<number[]>([0, 0, 0, 0, 0]);
-  const slotWArray = useSharedValue<number[]>([0, 0, 0, 0, 0]);
+  // Array of X positions and widths for each route (0..3)
+  const routeXArray = useSharedValue<number[]>([0, 0, 0, 0]);
+  const routeWArray = useSharedValue<number[]>([0, 0, 0, 0]);
 
-  // Update worklet slot coordinates whenever layouts or barWidth update
+  // Update worklet route coordinates whenever layouts or barWidth update
   useEffect(() => {
     const xs: number[] = [];
     const ws: number[] = [];
-    for (let s = 0; s < slotCount; s++) {
-      const l = getSlotLayout(s);
-      xs.push(l.x);
-      ws.push(l.width);
+    for (let r = 0; r < state.routes.length; r++) {
+      const slot = slotFor(r);
+      xs.push(pillXFor(slot));
+      ws.push(pillWidth);
     }
-    slotXArray.value = xs;
-    slotWArray.value = ws;
-  }, [slotCount, getSlotLayout, slotXArray, slotWArray]);
+    routeXArray.value = xs;
+    routeWArray.value = ws;
+  }, [state.routes.length, pillXFor, pillWidth, routeXArray, routeWArray]);
 
-  // Spring pill to active slot layout on index change or layout change (when not dragging)
+  // Without a pager position (plain tabs, tests) the pill springs to the focused index.
   useEffect(() => {
-    if (tabSwipe?.isSwiping.value) {
-      return;
-    }
-    const layout = getSlotLayout(activeSlot);
-    if (layout.width > 0) {
-      pillX.value = reduceMotion ? layout.x : withSpring(layout.x, theme.motion.spring.snappy);
-      pillWidth.value = reduceMotion ? layout.width : withSpring(layout.width, theme.motion.spring.snappy);
-    }
-  }, [activeSlot, getSlotLayout, reduceMotion, pillX, pillWidth, theme.motion.spring.snappy, tabSwipe]);
+    posShared.value = reduceMotion ? state.index : withSpring(state.index, theme.motion.spring.snappy);
+  }, [state.index, reduceMotion, posShared, theme.motion.spring.snappy]);
+
+  // The pager drives `position` on the native driver, so JS listeners never fire while swiping.
+  // Interpolating it in an RN Animated style keeps the pill on the finger, on the UI thread.
+  const routeXs = state.routes.map((_, r) => pillXFor(slotFor(r)));
+  const pagerTranslateX =
+    position && routeXs.length > 1
+      ? position.interpolate({
+          inputRange: routeXs.map((_, r) => r),
+          outputRange: routeXs,
+          extrapolate: 'clamp',
+        })
+      : null;
 
   const pillStyle = useAnimatedStyle(() => {
-    if (tabSwipe && tabSwipe.isSwiping.value) {
-      const progress = tabSwipe.swipeProgress.value;
-      const target = tabSwipe.targetSlot.value;
-      if (target >= 0 && target !== activeSlot) {
-        const fromX = slotXArray.value[activeSlot] ?? pillX.value;
-        const toX = slotXArray.value[target] ?? fromX;
-        const fromW = slotWArray.value[activeSlot] ?? pillWidth.value;
-        const toW = slotWArray.value[target] ?? fromW;
-        const p = Math.abs(progress);
-        return {
-          transform: [{ translateX: fromX + p * (toX - fromX) }],
-          width: fromW + p * (toW - fromW),
-        };
-      }
+    const p = posShared.value;
+    const xs = routeXArray.value;
+    const ws = routeWArray.value;
+    const n = xs.length;
+
+    if (n === 0) {
+      return {
+        transform: [{ translateX: 0 }],
+        width: 0,
+      };
     }
+
+    let translateX: number;
+    let width: number;
+
+    if (n === 1 || p <= 0) {
+      translateX = xs[0] ?? 0;
+      width = ws[0] ?? 0;
+    } else if (p >= n - 1) {
+      translateX = xs[n - 1] ?? 0;
+      width = ws[n - 1] ?? 0;
+    } else {
+      const floorIndex = Math.floor(p);
+      const ceilIndex = Math.min(n - 1, floorIndex + 1);
+      const fraction = p - floorIndex;
+
+      const fromX = xs[floorIndex] ?? 0;
+      const toX = xs[ceilIndex] ?? fromX;
+      const fromW = ws[floorIndex] ?? 0;
+      const toW = ws[ceilIndex] ?? fromW;
+
+      translateX = fromX + fraction * (toX - fromX);
+      width = fromW + fraction * (toW - fromW);
+    }
+
     return {
-      transform: [{ translateX: pillX.value }],
-      width: pillWidth.value,
+      transform: [{ translateX }],
+      width,
     };
   });
 
@@ -191,7 +228,7 @@ export function FloatingTabBar({ state, descriptors, navigation }: FloatingTabBa
     });
   }, []);
 
-  const effectivePillWidth = activeLayout.width > 0 ? activeLayout.width : barWidth > 0 ? barWidth / slotCount : 0;
+  const effectivePillWidth = pillWidth;
 
   return (
     <View
@@ -213,15 +250,31 @@ export function FloatingTabBar({ state, descriptors, navigation }: FloatingTabBa
           theme.shadows.md,
         ]}
       >
-        {barWidth > 0 || effectivePillWidth > 0 ? (
+        {(barWidth > 0 || effectivePillWidth > 0) && pagerTranslateX ? (
+          <RNAnimated.View
+            pointerEvents="none"
+            testID="floating-tab-bar-pill"
+            style={[
+              styles.pill,
+              isRTL ? styles.pillAnchorRTL : styles.pillAnchorLTR,
+              {
+                width: effectivePillWidth,
+                backgroundColor: theme.colors.accentTintStrong,
+                borderRadius: theme.radius.xl,
+                transform: [{ translateX: pagerTranslateX }],
+              },
+            ]}
+          />
+        ) : barWidth > 0 || effectivePillWidth > 0 ? (
           <Animated.View
             pointerEvents="none"
             testID="floating-tab-bar-pill"
             style={[
               styles.pill,
+              isRTL ? styles.pillAnchorRTL : styles.pillAnchorLTR,
               {
                 width: effectivePillWidth,
-                backgroundColor: theme.colors.accentTint,
+                backgroundColor: theme.colors.accentTintStrong,
                 borderRadius: theme.radius.xl,
               },
               pillStyle,
@@ -230,7 +283,7 @@ export function FloatingTabBar({ state, descriptors, navigation }: FloatingTabBa
         ) : null}
 
         {state.routes.map((route, index) => {
-          const { options } = descriptors[route.key];
+          const options = descriptors[route.key]?.options ?? {};
           const label = options.title ?? route.name;
           const focused = state.index === index;
           const slot = slotFor(index);
@@ -274,6 +327,9 @@ export function FloatingTabBar({ state, descriptors, navigation }: FloatingTabBa
   );
 }
 
+const PILL_INSET = 6;
+const PILL_MAX_WIDTH = 76;
+
 const styles = StyleSheet.create({
   wrapper: {
     paddingHorizontal: TAB_BAR_MARGIN_X,
@@ -287,9 +343,15 @@ const styles = StyleSheet.create({
   },
   pill: {
     position: 'absolute',
-    left: 0,
     top: 6,
     bottom: 6,
+  },
+  // RN swaps left/right into start/end, so under an RTL direction `right` is the physical left.
+  pillAnchorLTR: {
+    left: 0,
+  },
+  pillAnchorRTL: {
+    right: 0,
   },
   slotWrapper: {
     flex: 1,
