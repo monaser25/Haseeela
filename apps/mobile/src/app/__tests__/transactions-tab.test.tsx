@@ -156,9 +156,9 @@ describe('TransactionsScreen Tab', () => {
     });
 
     expect(getByText('Website Redesign')).toBeTruthy();
-    expect(getAllByText('+$3,500.00').length).toBeGreaterThanOrEqual(1);
+    expect(getAllByText('+⁦3,500.00 $⁩').length).toBeGreaterThanOrEqual(1);
     expect(getByText('Figma Subscription')).toBeTruthy();
-    expect(getAllByText('-$15.00').length).toBeGreaterThanOrEqual(1);
+    expect(getAllByText('-⁦15.00 $⁩').length).toBeGreaterThanOrEqual(1);
     expect(getByText('App Milestone 1')).toBeTruthy();
   });
 
@@ -172,7 +172,7 @@ describe('TransactionsScreen Tab', () => {
     const tx1Row = getByTestId('transaction-row-tx-1');
     const a11yLabel = tx1Row.props.accessibilityLabel;
     expect(a11yLabel).toContain('Website Redesign');
-    expect(a11yLabel).toContain('+$3,500.00');
+    expect(a11yLabel).toContain('+⁦3,500.00 $⁩');
     expect(a11yLabel).toContain('Completed');
   });
 

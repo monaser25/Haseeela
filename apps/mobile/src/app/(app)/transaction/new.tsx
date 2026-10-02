@@ -113,7 +113,7 @@ export default function NewTransactionScreen() {
     }
   };
 
-  const currencySymbol = formatCurrency(0, currency).replace(/[0-9.,\s]/g, '') || '$';
+  const currencySymbol = formatCurrency(0, currency).replace(/[0-9.,\s⁦-⁩]/g, '') || '$';
 
   return (
     <ScreenContainer

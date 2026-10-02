@@ -1,5 +1,5 @@
 import React, { useCallback, useRef } from 'react';
-import { View, StyleSheet } from 'react-native';
+import { LogBox, View, StyleSheet } from 'react-native';
 import MaterialTopTabs from 'expo-router/js-top-tabs';
 import {
   LocaleDirContext,
@@ -15,6 +15,11 @@ import {
   FloatingTabBar,
   type FloatingTabBarProps,
 } from '../../../components/navigation/FloatingTabBar';
+
+// The language switches direction in JS without a restart, so the native I18nManager constant
+// only catches up on the next cold start. The pager receives `layoutDirection` explicitly, so
+// tab-view's check against that constant is a false alarm until then.
+LogBox.ignoreLogs(["The 'direction' prop is set to"]);
 
 function renderTabBar(props: unknown) {
   return <FloatingTabBar {...(props as FloatingTabBarProps)} />;
