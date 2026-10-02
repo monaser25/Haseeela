@@ -1,5 +1,5 @@
 import React from 'react';
-import { render } from '@testing-library/react-native';
+import { render, fireEvent } from '@testing-library/react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import TabLayout from '../(app)/(tabs)/_layout';
 import { ThemeProvider } from '../../theme';
@@ -46,4 +46,18 @@ describe('TabLayout bottom-tab navigation', () => {
 
     expect(getByTestId('tab-screen-more').props.accessibilityLabel).toBe('المزيد');
   });
+
+  it('renders all four tab buttons in the floating bar and navigates on press', () => {
+    const { getByTestId } = renderTabLayout('en');
+
+    expect(getByTestId('tab-button-index')).toBeTruthy();
+    expect(getByTestId('tab-button-transactions')).toBeTruthy();
+    expect(getByTestId('tab-button-clients')).toBeTruthy();
+    expect(getByTestId('tab-button-more')).toBeTruthy();
+
+    fireEvent.press(getByTestId('tab-button-transactions'));
+    const router = require('expo-router').useRouter();
+    expect(router.navigate).toHaveBeenCalledWith('transactions', undefined);
+  });
 });
+

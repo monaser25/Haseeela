@@ -133,17 +133,38 @@ jest.mock('expo-linear-gradient', () => {
   };
 });
 
+// Mock react-native-pager-view
+jest.mock('react-native-pager-view', () => {
+  const React = require('react');
+  const { View } = require('react-native');
+  class MockPagerView extends React.Component {
+    setPage = jest.fn();
+    setPageWithoutAnimation = jest.fn();
+    render() {
+      return React.createElement(View, { testID: 'pager-view', ...this.props }, this.props.children);
+    }
+  }
+  return {
+    __esModule: true,
+    default: MockPagerView,
+    PagerView: MockPagerView,
+  };
+});
+
+const mockRouterInstance = {
+  push: jest.fn(),
+  replace: jest.fn(),
+  navigate: jest.fn(),
+  back: jest.fn(),
+  canGoBack: () => true,
+};
+
 // Mock expo-router
 jest.mock('expo-router', () => {
   const React = require('react');
-  const { View, Text } = require('react-native');
+  const { View, Text, Animated } = require('react-native');
   return {
-    useRouter: jest.fn(() => ({
-      push: jest.fn(),
-      replace: jest.fn(),
-      back: jest.fn(),
-      canGoBack: () => true,
-    })),
+    useRouter: jest.fn(() => mockRouterInstance),
     useLocalSearchParams: jest.fn(() => ({})),
     usePathname: jest.fn(() => '/'),
     useRootNavigationState: jest.fn(() => ({ key: 'root' })),
@@ -179,6 +200,67 @@ jest.mock('expo-router', () => {
         },
       }
     ),
+    withLayoutContext: (_Nav) => {
+      const Component = ({ children, tabBar, screenOptions, ..._props }) => {
+        const screens = React.Children.toArray(children).filter(Boolean);
+        const routes = screens.map((child) => ({
+          key: child.props.name,
+          name: child.props.name,
+        }));
+        const descriptors = Object.fromEntries(
+          screens.map((child) => [
+            child.props.name,
+            {
+              options: {
+                ...screenOptions,
+                ...child.props.options,
+              },
+            },
+          ])
+        );
+        const navigation = {
+          emit: jest.fn(() => ({ defaultPrevented: false })),
+          navigate: jest.fn((name, params) => {
+            mockRouterInstance.navigate(name, params);
+          }),
+          dispatch: jest.fn(),
+        };
+        const state = {
+          index: 0,
+          routes,
+        };
+        const tabBarElement =
+          typeof tabBar === 'function'
+            ? tabBar({
+                state,
+                descriptors,
+                navigation,
+                position: new Animated.Value(0),
+                layout: { width: 390, height: 844 },
+                jumpTo: jest.fn(),
+              })
+            : null;
+
+        return React.createElement(
+          View,
+          { testID: 'material-top-tabs-navigator' },
+          screens,
+          tabBarElement
+        );
+      };
+      Component.Screen = ({ name, options }) => {
+        const title = typeof options?.title === 'function' ? options.title() : options?.title;
+        return React.createElement(
+          View,
+          {
+            testID: name ? `tab-screen-${name}` : 'tab-screen',
+            accessibilityLabel: options?.tabBarAccessibilityLabel || title,
+          },
+          title
+        );
+      };
+      return Component;
+    },
   };
 });
 
@@ -189,7 +271,7 @@ jest.mock('lucide-react-native', () => {
     {},
     {
       get: (_target, prop) => {
-        return (props: any) =>
+        return (props) =>
           React.createElement('View', {
             testID: `lucide-icon-${String(prop)}`,
             ...props,
@@ -198,3 +280,10 @@ jest.mock('lucide-react-native', () => {
     }
   );
 });
+
+// The tabs layout uses expo-router's vendored material-top-tabs navigator; reuse the
+// withLayoutContext mock above so tests render the FloatingTabBar with plain props.
+jest.mock('expo-router/js-top-tabs', () => ({
+  __esModule: true,
+  default: require('expo-router').withLayoutContext(null),
+}));
