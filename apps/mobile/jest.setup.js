@@ -1,6 +1,26 @@
 // Jest setup for mobile app
 import '@testing-library/react-native';
 
+// Pre-load react-native's lazily exported components. RN defines them as getters that transform and
+// evaluate the component module on first access; on a cold Jest transform cache (always the case in
+// CI) that costs 1-6s synchronously inside the first test that renders them, which blows RNTL's 1s
+// findBy* deadline. Touching them here pays the cost during setup, outside any timed assertion.
+// Plain property access only - no mocks.
+const ReactNative = require('react-native');
+void [
+  ReactNative.ActivityIndicator,
+  ReactNative.FlatList,
+  ReactNative.KeyboardAvoidingView,
+  ReactNative.Modal,
+  ReactNative.Pressable,
+  ReactNative.RefreshControl,
+  ReactNative.ScrollView,
+  ReactNative.SectionList,
+  ReactNative.Switch,
+  ReactNative.TextInput,
+  ReactNative.TouchableOpacity,
+];
+
 process.env.EXPO_PUBLIC_SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL || 'https://mock-supabase.example.com';
 process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || 'mock-anon-key';
 process.env.EXPO_PUBLIC_API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://10.0.2.2:3000';
