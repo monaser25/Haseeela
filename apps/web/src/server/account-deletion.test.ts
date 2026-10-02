@@ -373,7 +373,11 @@ import { DELETE as deleteUserAccount } from '@/app/api/user/delete/route';
 import { GET as runCron } from '@/app/api/cron/route';
 import { ensureUser } from '@/server/devUser';
 import { GET as getClients } from '@/app/api/clients/route';
-import { retryPendingDeletions } from '@/server/accountDeletion';
+import {
+  retryPendingDeletions,
+  executeFencedFinancialCleanupTransaction,
+  executeAccountDeletionWorkflow,
+} from '@/server/accountDeletion';
 
 const tokenFor = (id: string) => `flowledger-dev:${encodeURIComponent(JSON.stringify({ id, email: `${id}@example.com` }))}`;
 
@@ -399,6 +403,53 @@ const seedUserFinanceData = (userId: string) => {
   notificationDb.set(`notif-${userId}`, { id: `notif-${userId}`, userId, title: 'Notif' });
   auditLogDb.set(`audit-${userId}`, { id: `audit-${userId}`, userId, action: 'CREATE' });
   deviceTokenDb.set(`dev-${userId}`, { id: `dev-${userId}`, userId, token: `ExponentPushToken[${userId}]` });
+};
+
+// All 10 domain tables the deletion transaction cleans (schema.prisma models, in code order).
+const DOMAIN_STORES: Array<[string, () => Map<string, any>]> = [
+  ['notification', () => notificationDb],
+  ['invoiceLineItem', () => invoiceLineItemDb],
+  ['invoice', () => invoiceDb],
+  ['transaction', () => transactionDb],
+  ['budget', () => budgetDb],
+  ['subscription', () => subscriptionDb],
+  ['client', () => clientDb],
+  ['category', () => categoryDb],
+  ['auditLog', () => auditLogDb],
+  ['user', () => userDb],
+];
+
+const snapshotDomainRows = (): Record<string, string[]> =>
+  Object.fromEntries(DOMAIN_STORES.map(([name, get]) => [name, Array.from(get().keys()).sort()]));
+
+// Adds `extra` more rows per table for a user (on top of seedUserFinanceData's single row).
+const seedExtraRows = (userId: string, extra: number) => {
+  for (let n = 2; n < 2 + extra; n++) {
+    const sfx = `${userId}-${n}`;
+    clientDb.set(`client-${sfx}`, { id: `client-${sfx}`, userId });
+    subscriptionDb.set(`sub-${sfx}`, { id: `sub-${sfx}`, userId });
+    categoryDb.set(`cat-${sfx}`, { id: `cat-${sfx}`, userId });
+    budgetDb.set(`bud-${sfx}`, { id: `bud-${sfx}`, userId });
+    invoiceDb.set(`inv-${sfx}`, { id: `inv-${sfx}`, userId });
+    invoiceLineItemDb.set(`item-${sfx}`, { id: `item-${sfx}`, invoiceId: `inv-${sfx}` });
+    transactionDb.set(`tx-${sfx}`, { id: `tx-${sfx}`, userId });
+    notificationDb.set(`notif-${sfx}`, { id: `notif-${sfx}`, userId });
+    auditLogDb.set(`audit-${sfx}`, { id: `audit-${sfx}`, userId });
+  }
+};
+
+const armAuthDeletedRow = (userId: string, ownerToken: string) => {
+  deletionDb.set(userId, {
+    id: `del-${userId}`,
+    userId,
+    status: 'AUTH_DELETED',
+    isDev: false,
+    attempts: 0,
+    lastErrorCode: null,
+    ownerToken,
+    leaseExpiresAt: new Date(Date.now() + 60_000),
+    completedAt: null,
+  });
 };
 
 describe('Production-Safe Account Deletion Lifecycle & Verification Seams', () => {
@@ -635,6 +686,135 @@ describe('Production-Safe Account Deletion Lifecycle & Verification Seams', () =
       } finally {
         jest.useRealTimers();
       }
+    });
+  });
+
+  describe('3b. Final COMPLETED commit loses its claim (mocked Prisma: proves code logic, NOT Postgres transaction concurrency)', () => {
+    // The mock $transaction snapshots the in-memory maps and restores them if the callback throws,
+    // which models rollback semantics only; it does not exercise real row locks or isolation.
+    const dropCompletedCommit = (onDrop?: () => void) => {
+      const orig = mockPrisma.accountDeletion.updateMany;
+      mockPrisma.accountDeletion.updateMany = jest.fn(async (args: any) => {
+        if (args?.data?.status === 'COMPLETED') {
+          onDrop?.();
+          return { count: 0 };
+        }
+        return orig(args);
+      });
+      return orig;
+    };
+
+    it('count 0 on the final commit and row not COMPLETED: throws CLAIM_EXPIRED and rolls back every domain table', async () => {
+      armAuthDeletedRow('user-a', 'worker-1');
+      const before = snapshotDomainRows();
+
+      const orig = dropCompletedCommit();
+      try {
+        await expect(
+          executeFencedFinancialCleanupTransaction(mockPrisma, 'user-a', 'worker-1'),
+        ).rejects.toMatchObject({ statusCode: 409, code: 'CLAIM_EXPIRED', deletionPending: true });
+      } finally {
+        mockPrisma.accountDeletion.updateMany = orig;
+      }
+
+      // Deletes were really issued inside the tx, so it is the rollback that restored the rows.
+      expect(mockPrisma.user.deleteMany).toHaveBeenCalledWith({ where: { id: 'user-a' } });
+      expect(mockPrisma.notification.deleteMany).toHaveBeenCalledTimes(1);
+
+      expect(snapshotDomainRows()).toEqual(before);
+      const marker = deletionDb.get('user-a');
+      expect(marker.status).toBe('AUTH_DELETED');
+      expect(marker.completedAt).toBeNull();
+      expect(marker.ownerToken).toBe('worker-1');
+    });
+
+    it('count 0 on the final commit but another worker already COMPLETED the row: returns ok and does not re-complete it', async () => {
+      armAuthDeletedRow('user-a', 'worker-1');
+      const otherCompletedAt = new Date('2030-01-01T00:00:00Z');
+
+      const orig = dropCompletedCommit(() => {
+        // Another worker finished first: row is COMPLETED and owned by nobody.
+        deletionDb.set('user-a', {
+          ...deletionDb.get('user-a'),
+          status: 'COMPLETED',
+          completedAt: otherCompletedAt,
+          ownerToken: null,
+          leaseExpiresAt: null,
+        });
+      });
+      let result: { ok: boolean };
+      try {
+        result = await executeFencedFinancialCleanupTransaction(mockPrisma, 'user-a', 'worker-1');
+      } finally {
+        mockPrisma.accountDeletion.updateMany = orig;
+      }
+
+      expect(result).toEqual({ ok: true });
+      const marker = deletionDb.get('user-a');
+      expect(marker.status).toBe('COMPLETED');
+      expect(marker.completedAt).toEqual(otherCompletedAt); // this worker did not write completion
+      expect(userDb.has('user-b')).toBe(true);
+    });
+  });
+
+  describe('3c. Per-owner exactly-once cleanup across all 10 tables (mocked Prisma: logic only)', () => {
+    const deleteResultCounts = async () => {
+      const entries = await Promise.all(
+        DOMAIN_STORES.map(async ([name]) => {
+          const results = mockPrisma[name].deleteMany.mock.results;
+          const counts = await Promise.all(results.map((r: any) => r.value));
+          return [name, counts.map((c: { count: number }) => c.count)] as const;
+        }),
+      );
+      return Object.fromEntries(entries);
+    };
+
+    it('deleting A removes exactly A rows in each of the 10 tables, keeps B intact, and a second run does no more deletes', async () => {
+      seedExtraRows('user-a', 1); // A: 2 rows per table (1 user row)
+      seedExtraRows('user-b', 2); // B: 3 rows per table (1 user row)
+      const bBefore = snapshotDomainRows();
+      Object.keys(bBefore).forEach((k) => {
+        bBefore[k] = bBefore[k].filter((id) => id.includes('user-b'));
+      });
+
+      const first = await executeAccountDeletionWorkflow('user-a', { isDevUser: true, caller: 'delete' });
+      expect(first).toEqual({ ok: true });
+
+      // Exactly one deleteMany per table, with exactly A's removal counts.
+      expect(await deleteResultCounts()).toEqual({
+        notification: [2],
+        invoiceLineItem: [2],
+        invoice: [2],
+        transaction: [2],
+        budget: [2],
+        subscription: [2],
+        client: [2],
+        category: [2],
+        auditLog: [2],
+        user: [1],
+      });
+
+      // No A row remains; B's rows are exactly as before; the third seeded user (user-real) is untouched.
+      for (const [name, get] of DOMAIN_STORES) {
+        const ids = Array.from(get().keys());
+        expect(ids.filter((id) => id.includes('user-a'))).toEqual([]);
+        expect(ids.filter((id) => id.includes('user-b')).sort()).toEqual(bBefore[name]);
+        expect(ids.filter((id) => id.includes('user-real'))).toHaveLength(1);
+      }
+      expect(deletionDb.get('user-a').status).toBe('COMPLETED');
+
+      // Idempotent: a retry after completion issues zero further deletes and changes nothing.
+      const afterFirst = snapshotDomainRows();
+      DOMAIN_STORES.forEach(([name]) => mockPrisma[name].deleteMany.mockClear());
+      const second = await executeAccountDeletionWorkflow('user-a', { isDevUser: true, caller: 'delete' });
+      expect(second).toEqual({ ok: true });
+      DOMAIN_STORES.forEach(([name]) => expect(mockPrisma[name].deleteMany).not.toHaveBeenCalled());
+      expect(snapshotDomainRows()).toEqual(afterFirst);
+
+      // The fenced transaction invoked directly against a COMPLETED row is likewise a no-op.
+      const third = await executeFencedFinancialCleanupTransaction(mockPrisma, 'user-a', 'stale-token');
+      expect(third).toEqual({ ok: true });
+      DOMAIN_STORES.forEach(([name]) => expect(mockPrisma[name].deleteMany).not.toHaveBeenCalled());
     });
   });
 
