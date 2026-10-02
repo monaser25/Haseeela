@@ -13,7 +13,7 @@ import { ArrowLeft, Lock, ChevronRight } from 'lucide-react-native';
 import { useTheme } from '../../theme';
 import { useI18n } from '../../i18n';
 import { useAuth, getSupabaseClient } from '../../auth';
-import { getSessionEpoch, getCurrentAuthUserId } from '../../auth/authScope';
+import { getSessionEpoch, getCurrentAuthUserId, enqueueAuthOp } from '../../auth/authScope';
 import { usePreferences, useUpdatePreferences } from '../../api';
 import { useIsOnline } from '../../query';
 import { Button, Banner, TextField, ScreenContainer } from '../../components/ui';
@@ -130,58 +130,63 @@ export default function ProfileScreen() {
     setSuccessMessage(null);
     setErrorMessage(null);
 
+    // Fence: this op still owns the lock, the screen is mounted, and owner + epoch are unchanged.
+    const ownsLock = () => isMountedRef.current && activeOpRef.current?.id === opId;
+    const isCurrent = () =>
+      ownsLock() &&
+      getSessionEpoch() === initiatingEpoch &&
+      getCurrentAuthUserId() === initiatingOwnerId;
+    // Release the lock and the saving flag only while this op still owns them. After an owner
+    // change or unmount the identity-reset effect has already cleaned up, so nothing is touched.
+    const release = () => {
+      if (!ownsLock()) return;
+      activeOpRef.current = null;
+      setIsSaving(false);
+    };
+    // Surface an error only if the failure still belongs to the initiating owner.
+    const fail = (message: string) => {
+      if (isCurrent()) setErrorMessage(message);
+      release();
+    };
+
     // Step 0: Preflight verification against actual Supabase SDK session
     const client = getSupabaseClient();
-    let preflightSession: any = null;
+    let preflightUserId: string | undefined;
     try {
       const { data: sessionData, error: sessionErr } = await client.auth.getSession();
-      if (sessionErr || !sessionData?.session) {
-        if (activeOpRef.current?.id === opId) activeOpRef.current = null;
-        setIsSaving(false);
+      if (!isCurrent()) {
+        release();
         return;
       }
-      preflightSession = sessionData.session;
+      preflightUserId = sessionErr ? undefined : sessionData?.session?.user?.id;
     } catch {
-      if (activeOpRef.current?.id === opId) activeOpRef.current = null;
-      setIsSaving(false);
+      fail(t('profile.toast.nameFailed'));
       return;
     }
 
-    // Recheck immediately before SDK operation: zero SDK write if owner changed or session invalid
-    if (
-      !isMountedRef.current ||
-      activeOpRef.current?.id !== opId ||
-      getSessionEpoch() !== initiatingEpoch ||
-      getCurrentAuthUserId() !== initiatingOwnerId ||
-      preflightSession.user.id !== initiatingOwnerId
-    ) {
-      if (activeOpRef.current?.id === opId) activeOpRef.current = null;
-      setIsSaving(false);
+    // Null session/user or a different SDK owner: zero SDK write
+    if (preflightUserId !== initiatingOwnerId) {
+      fail(t('profile.toast.nameFailed'));
       return;
     }
 
-    // Step 1: Update Supabase auth user_metadata
+    // Step 1: Update Supabase auth user_metadata through the shared auth queue. The queued op can
+    // start long after initiation, so owner/epoch are re-verified at execution time.
     try {
-      const { data, error: sdkError } = await client.auth.updateUser({
-        data: { name: trimmed },
+      const result = await enqueueAuthOp(async () => {
+        if (!isCurrent()) return null;
+        return client.auth.updateUser({ data: { name: trimmed } });
       });
 
       // Fence check after await: still mounted and still the same owner/epoch?
-      if (
-        !isMountedRef.current ||
-        activeOpRef.current?.id !== opId ||
-        getSessionEpoch() !== initiatingEpoch ||
-        getCurrentAuthUserId() !== initiatingOwnerId
-      ) {
+      if (!result || !isCurrent()) {
+        release();
         return;
       }
 
+      const { data, error: sdkError } = result;
       if (sdkError || !data?.user || data.user.id !== initiatingOwnerId) {
-        setErrorMessage(t('profile.toast.nameFailed'));
-        if (activeOpRef.current?.id === opId) {
-          activeOpRef.current = null;
-        }
-        setIsSaving(false);
+        fail(t('profile.toast.nameFailed'));
         return;
       }
 
@@ -189,42 +194,18 @@ export default function ProfileScreen() {
       try {
         await updatePreferencesMutation.mutateAsync({ name: trimmed });
       } catch {
-        if (
-          isMountedRef.current &&
-          activeOpRef.current?.id === opId &&
-          getSessionEpoch() === initiatingEpoch &&
-          getCurrentAuthUserId() === initiatingOwnerId
-        ) {
-          setErrorMessage(t('profile.savePartial'));
-          setIsSaving(false);
-          activeOpRef.current = null;
-        }
+        fail(t('profile.savePartial'));
         return;
       }
 
-      if (
-        isMountedRef.current &&
-        activeOpRef.current?.id === opId &&
-        getSessionEpoch() === initiatingEpoch &&
-        getCurrentAuthUserId() === initiatingOwnerId
-      ) {
+      if (isCurrent()) {
         setSuccessMessage(t('profile.toast.nameUpdated'));
         setErrorMessage(null);
         setIsDirty(false);
-        setIsSaving(false);
-        activeOpRef.current = null;
       }
+      release();
     } catch {
-      if (
-        isMountedRef.current &&
-        activeOpRef.current?.id === opId &&
-        getSessionEpoch() === initiatingEpoch &&
-        getCurrentAuthUserId() === initiatingOwnerId
-      ) {
-        setErrorMessage(t('profile.toast.nameFailed'));
-        setIsSaving(false);
-        activeOpRef.current = null;
-      }
+      fail(t('profile.toast.nameFailed'));
     }
   };
 
