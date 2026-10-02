@@ -4,6 +4,8 @@ export interface ColorTokens {
   /** Accent for text/icons drawn on bg, surface or accentTint (AA on all of them). */
   accentText: string;
   accentTint: string;
+  /** Selected-state fill that must read clearly on surface (tab bar pill). */
+  accentTintStrong: string;
   accentFg: string;
 
   bg: string;
@@ -55,6 +57,7 @@ export const lightColors: ColorTokens = {
   accentHover: '#5B4FE0',
   accentText: '#5748E8', // 6.0:1 on #FFFFFF, 5.5:1 on bg, 5.2:1 on accentTint
   accentTint: '#EEEDFE',
+  accentTintStrong: '#E1DCFF', // accentText 4.6:1 on it
   accentFg: '#FFFFFF', // 4.5:1 on accent
 
   bg: '#F6F5FC',
@@ -99,6 +102,7 @@ export const darkColors: ColorTokens = {
   accentHover: '#7D70FF',
   accentText: '#9D94FF', // 7.0:1 on surface, 6.1:1 on accentTint
   accentTint: '#221F3F',
+  accentTintStrong: '#2B2752',
   accentFg: '#FFFFFF', // 4.6:1 on accent
 
   bg: '#0B0A12',

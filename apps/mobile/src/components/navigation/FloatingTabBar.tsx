@@ -247,9 +247,10 @@ export function FloatingTabBar({ state, descriptors, navigation, position }: Flo
             testID="floating-tab-bar-pill"
             style={[
               styles.pill,
+              isRTL ? styles.pillAnchorRTL : styles.pillAnchorLTR,
               {
                 width: effectivePillWidth,
-                backgroundColor: theme.colors.accentTint,
+                backgroundColor: theme.colors.accentTintStrong,
                 borderRadius: theme.radius.xl,
                 transform: [{ translateX: pagerTranslateX }],
               },
@@ -261,9 +262,10 @@ export function FloatingTabBar({ state, descriptors, navigation, position }: Flo
             testID="floating-tab-bar-pill"
             style={[
               styles.pill,
+              isRTL ? styles.pillAnchorRTL : styles.pillAnchorLTR,
               {
                 width: effectivePillWidth,
-                backgroundColor: theme.colors.accentTint,
+                backgroundColor: theme.colors.accentTintStrong,
                 borderRadius: theme.radius.xl,
               },
               pillStyle,
@@ -329,9 +331,15 @@ const styles = StyleSheet.create({
   },
   pill: {
     position: 'absolute',
-    left: 0,
     top: 6,
     bottom: 6,
+  },
+  // RN swaps left/right into start/end, so under an RTL direction `right` is the physical left.
+  pillAnchorLTR: {
+    left: 0,
+  },
+  pillAnchorRTL: {
+    right: 0,
   },
   slotWrapper: {
     flex: 1,
