@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, Pressable, StyleSheet, I18nManager } from 'react-native';
+import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ChevronLeft, Globe, Sun, Moon } from 'lucide-react-native';
 import { useTheme } from '../../theme';
@@ -20,7 +20,7 @@ export function AuthNavHeader({
 }: AuthNavHeaderProps) {
   const router = useRouter();
   const { theme, isDark, toggleTheme } = useTheme();
-  const { t, locale, toggleLocale } = useI18n();
+  const { t, locale, toggleLocale, isRTL } = useI18n();
 
   const handleBack = () => {
     if (onBack) {
@@ -54,7 +54,7 @@ export function AuthNavHeader({
             <ChevronLeft
               size={20}
               color={theme.colors.text}
-              style={I18nManager.isRTL ? { transform: [{ scaleX: -1 }] } : undefined}
+              style={isRTL ? { transform: [{ scaleX: -1 }] } : undefined}
             />
           </Pressable>
         ) : null}

@@ -155,7 +155,7 @@ export default function NewInvoiceScreen() {
   };
 
   return (
-    <ScreenContainer testID="new-invoice-screen" edges={['top', 'left', 'right', 'bottom']}>
+    <ScreenContainer testID="new-invoice-screen" edges={['top', 'left', 'right', 'bottom']} scrollable={false} padded={false}>
       {/* Top Header */}
       <View style={styles.header}>
         <Pressable

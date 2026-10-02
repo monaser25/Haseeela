@@ -353,6 +353,8 @@ function SubscriptionDetailViewer({
     <ScreenContainer
       testID="subscription-detail-screen"
       edges={['top', 'bottom', 'left', 'right']}
+      scrollable={false}
+      padded={false}
     >
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}

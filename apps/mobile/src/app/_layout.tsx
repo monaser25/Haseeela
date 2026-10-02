@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -6,7 +7,8 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import * as SplashScreen from 'expo-splash-screen';
 import { Locale } from '@haseela/shared';
 import { ThemeProvider, useTheme } from '../theme';
-import { I18nProvider, initLocale } from '../i18n';
+import { CoverTransitionProvider } from '../components/motion/TransitionCover';
+import { I18nProvider, LayoutDirectionRoot, initLocale } from '../i18n';
 import { QueryProvider } from '../query';
 import { AuthProvider, useAuth } from '../auth';
 import { PushNavigationHandler } from '../services/push/PushNavigationHandler';
@@ -15,18 +17,42 @@ import { ForceUpdateGate } from '../services/update/ForceUpdateGate';
 // Keep native splash screen visible until initialization completes
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
+/**
+ * Longest the native splash screen may stay up. Locale init, the auth bootstrap or a slow native
+ * module can stall; past this the splash is hidden anyway and a visible fallback is rendered, so a
+ * cold start can never hang silently on the splash.
+ */
+export const SPLASH_FAILSAFE_MS = 5000;
+
 export function RootContent({ isLocaleReady }: { isLocaleReady: boolean }) {
   const { theme, isDark } = useTheme();
   const { status } = useAuth();
+  const [bootStalled, setBootStalled] = useState(false);
+
+  const isBootReady = isLocaleReady && status !== 'loading';
 
   useEffect(() => {
-    if (isLocaleReady && status !== 'loading') {
+    if (isBootReady) {
       SplashScreen.hideAsync().catch(() => {});
+      return;
     }
-  }, [isLocaleReady, status]);
+    const timer = setTimeout(() => {
+      SplashScreen.hideAsync().catch(() => {});
+      setBootStalled(true);
+    }, SPLASH_FAILSAFE_MS);
+    return () => clearTimeout(timer);
+  }, [isBootReady]);
 
-  if (!isLocaleReady || status === 'loading') {
-    return null;
+  if (!isBootReady) {
+    if (!bootStalled) return null;
+    return (
+      <View
+        testID="boot-fallback"
+        style={[styles.bootFallback, { backgroundColor: theme.colors.bg }]}
+      >
+        <ActivityIndicator size="large" color={theme.colors.accent} />
+      </View>
+    );
   }
 
   return (
@@ -50,10 +76,27 @@ export function RootContent({ isLocaleReady }: { isLocaleReady: boolean }) {
   );
 }
 
+/** Inside the theme so the language-switch transition can dip through the current background. */
+function LocalizedProviders({
+  initialLocale,
+  children,
+}: {
+  initialLocale: Locale | null;
+  children: React.ReactNode;
+}) {
+  const { theme } = useTheme();
+  return (
+    <I18nProvider initialLocale={initialLocale ?? undefined} coverColor={theme.colors.bg}>
+      <LayoutDirectionRoot>{children}</LayoutDirectionRoot>
+    </I18nProvider>
+  );
+}
+
 export default function RootLayout() {
   const [initialLocale, setInitialLocale] = useState<Locale | null>(null);
 
   useEffect(() => {
+    // initLocale is bounded and never rejects; the catch is a last-resort guard for the boot gate.
     initLocale()
       .then((resolvedLocale) => {
         setInitialLocale(resolvedLocale);
@@ -64,21 +107,34 @@ export default function RootLayout() {
   }, []);
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
+    <GestureHandlerRootView style={styles.gestureRoot}>
       <SafeAreaProvider>
-        <ThemeProvider>
-          <I18nProvider initialLocale={initialLocale ?? undefined}>
-            <QueryProvider>
-              <AuthProvider>
-                <ForceUpdateGate>
-                  <PushNavigationHandler />
-                  <RootContent isLocaleReady={initialLocale !== null} />
-                </ForceUpdateGate>
-              </AuthProvider>
-            </QueryProvider>
-          </I18nProvider>
-        </ThemeProvider>
+        <CoverTransitionProvider>
+          <ThemeProvider>
+            <LocalizedProviders initialLocale={initialLocale}>
+              <QueryProvider>
+                <AuthProvider>
+                  <ForceUpdateGate>
+                    <PushNavigationHandler />
+                    <RootContent isLocaleReady={initialLocale !== null} />
+                  </ForceUpdateGate>
+                </AuthProvider>
+              </QueryProvider>
+            </LocalizedProviders>
+          </ThemeProvider>
+        </CoverTransitionProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );
 }
+
+const styles = StyleSheet.create({
+  gestureRoot: {
+    flex: 1,
+  },
+  bootFallback: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+});

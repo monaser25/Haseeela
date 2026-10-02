@@ -134,6 +134,25 @@ describe('SettingsScreen', () => {
     expect(mockServer.getWriteRequests()).toHaveLength(0);
   });
 
+  it('language and theme segments apply immediately in place, with no restart', async () => {
+    const { getByTestId, getByText } = setupProviders();
+
+    await waitFor(() => {
+      expect(getByTestId('lang-seg-en').props.accessibilityState.selected).toBe(true);
+    });
+
+    fireEvent.press(getByTestId('lang-seg-ar'));
+    await waitFor(() => {
+      expect(getByTestId('lang-seg-ar').props.accessibilityState.selected).toBe(true);
+      expect(getByText('الحساب')).toBeTruthy();
+    });
+
+    fireEvent.press(getByTestId('theme-seg-dark'));
+    await waitFor(() => {
+      expect(getByTestId('theme-seg-dark').props.accessibilityState.selected).toBe(true);
+    });
+  });
+
   it('renders grouped sections with email, profile, currency, and accounting mode', async () => {
     const { getByTestId } = setupProviders();
 

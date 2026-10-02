@@ -386,7 +386,7 @@ export default function InvoiceDetailScreen() {
   }
 
   return (
-    <ScreenContainer testID="invoice-detail-screen" edges={['top', 'left', 'right', 'bottom']}>
+    <ScreenContainer testID="invoice-detail-screen" edges={['top', 'left', 'right', 'bottom']} scrollable={false} padded={false}>
       {/* Top Header */}
       <View style={styles.navBar}>
         <Pressable

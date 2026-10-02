@@ -5,3 +5,4 @@ export * from './FadeInView';
 export * from './AnimatedNumber';
 export * from './Skeleton';
 export * from './SwipeableRow';
+export * from './TransitionCover';
